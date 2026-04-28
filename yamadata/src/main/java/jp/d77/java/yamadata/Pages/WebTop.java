@@ -1,9 +1,9 @@
 package jp.d77.java.yamadata.Pages;
 
-import jp.d77.java.yamadata.Datas.YamaDataConfig;
+import jp.d77.java.yamadata.Datas.YamaWebConfig;
 
 public class WebTop extends AbstractYamaData{
-    public WebTop( YamaDataConfig cfg ) {
+    public WebTop( YamaWebConfig cfg ) {
         super( cfg );
         this.setHtmlTitle( "YamaData" );
     }

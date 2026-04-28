@@ -3,16 +3,17 @@ package jp.d77.java.yamadata.Pages;
 import jp.d77.java.tools.BasicIO.Debugger;
 import jp.d77.java.tools.HtmlIO.BSOpts;
 import jp.d77.java.tools.HtmlIO.BSSForm;
-import jp.d77.java.yamadata.Datas.YamaDataConfig;
+import jp.d77.java.tools.HtmlIO.HtmlString;
+import jp.d77.java.yamadata.Datas.YamaWebConfig;
 import jp.d77.java.yamadata.Datas.YamaDetailData;
 
 public class WebYamaList extends AbstractYamaData{
-    private YamaDetailData yamadata;
+    private YamaDetailData m_yamadata;
     
-    public WebYamaList( YamaDataConfig cfg ) {
+    public WebYamaList( YamaWebConfig cfg ) {
         super( cfg );
         this.setHtmlTitle( "YamaData" );
-        this.yamadata = new YamaDetailData( this.getConfig().getDataFilePath() + "yamadata.cfg", this.getConfig() );
+        this.m_yamadata = new YamaDetailData( this.getConfig().getDataFilePath() + "yamadata.cfg", this.getConfig() );
     }
 
     // 1:init
@@ -25,7 +26,7 @@ public class WebYamaList extends AbstractYamaData{
     @Override
     public void load() {
         super.load();
-        this.yamadata.load();
+        this.m_yamadata.load();
     }
 
     // 3:post_save_reload
@@ -65,7 +66,7 @@ public class WebYamaList extends AbstractYamaData{
 
         this.getHtml().addString( BSSForm.create().formTop( this.getUri(), true).toString() );
         this.getHtml().addString( this.CmdButton() );
-
+        this.getHtml().addString( this.YamaList() );
         this.getHtml().addString( BSSForm.create().formBtm().toString() );
         this.getHtml().addStringBr( "Data Path=" + this.getConfig().getDataFilePath() );
     }
@@ -81,7 +82,6 @@ public class WebYamaList extends AbstractYamaData{
     public void displayFooter(){
         super.displayFooter();
     }
-    
     
     public String CmdButton(){
         Debugger.TracePrint();
@@ -103,6 +103,37 @@ public class WebYamaList extends AbstractYamaData{
         f.divBtm(12);
 
         f.divRowBtm();
+
+        return f.toString();
+    }
+
+    public String YamaList(){
+        Debugger.TracePrint();
+
+        BSSForm f = BSSForm.create();
+        f.tableTop(
+            new BSOpts()
+                .id( "yamadetail")
+                .fclass("table table-bordered table-striped")
+                .border("1")
+        );
+        f.tableHeadTop();
+        f.tableRowTh( "ID", "TITLE" );
+        f.tableHeadBtm();
+
+        for ( Integer id: this.m_yamadata.getIndexList() ){
+            this.m_yamadata.setDefaultYamaId(id);
+            f.tableRowTop();
+            f.tableTdHtml( id + "" );
+            f.tableTdHtml( "<A Href=\"/yamadata?edit_id=" + id + "\">"
+                + HtmlString.HtmlEscape( this.m_yamadata.getYamaData( "title" ).orElse("") )
+                + "</A>" );
+            f.tableRowBtm();
+        }
+
+        f.tableBodyTop();
+        f.tableBodyBtm();
+        f.tableBtm();
 
         return f.toString();
     }

@@ -1,9 +1,14 @@
 package jp.d77.java.yamadata.Datas;
 
 import java.io.File;
+import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 import jp.d77.java.tools.BasicIO.StorableConfig;
 import jp.d77.java.tools.BasicIO.ToolDate;
@@ -12,10 +17,10 @@ import jp.d77.java.yamadata.Library.TrackLib.TrackPoint;
 
 public class YamaDetailData extends StorableConfig {
     private Integer m_yamaid = null;
-    private Map<String,GpxManager> m_gpxs = null;
-    private YamaDataConfig m_cfg = null;
+    private Map<String,GpxData> m_gpxs = null;
+    private YamaWebConfig m_cfg = null;
 
-    public YamaDetailData(String file_name, YamaDataConfig cfg ) {
+    public YamaDetailData(String file_name, YamaWebConfig cfg ) {
         super(file_name);
         this.m_gpxs = new HashMap<>();
         this.m_cfg = cfg;
@@ -24,6 +29,30 @@ public class YamaDetailData extends StorableConfig {
     public boolean isSetId(){
         if ( this.m_yamaid == null ) return false;
         return true;
+    }
+
+    /**
+     * トラックデータのインデックス一覧を取得する
+     * @return
+     */
+    public List<Integer> getIndexList(){
+        Map<Integer,Boolean> res = new HashMap<>();
+        Pattern p = Pattern.compile("^data(\\d+)_.*$");
+        for ( String key: this.enumKey() ){
+            if ( key.startsWith( "data" ) ){
+                Matcher m = p.matcher(key);
+                if (m.matches()) {
+                    try {
+                        res.put( Integer.parseInt(m.group(1)), true );
+                    } catch (Exception e) {
+                    }
+                }
+            }
+        }
+        
+        List<Integer> list = new ArrayList<>( res.keySet() );
+        Collections.sort(list);
+        return list;
     }
 
     public Integer getYamaId(){
@@ -91,7 +120,7 @@ public class YamaDetailData extends StorableConfig {
         if ( this.getYamaName( "gpxfiles" ).isEmpty() ) return;
         if ( this.m_gpxs.containsKey( this.getYamaName( "gpxdata" ).get() ) ) return;
 
-        GpxManager gpx = new GpxManager();
+        GpxData gpx = new GpxData();
         for ( String f: this.getYamaDatas( "gpxfiles" ) ){
             try {
                 gpx.load( new File( this.m_cfg.getDataFilePath() + "gpx/" + f ) );
@@ -128,11 +157,11 @@ public class YamaDetailData extends StorableConfig {
      * gpxTimeAscent    時間(登山)
      * gpxTimeDescent   時間(下山)
      */
-    public void saveGpxDatas(){
+    public void createGpxDatas(){
         if ( this.getYamaName( "gpxfiles" ).isEmpty() ) return;
         if ( ! this.m_gpxs.containsKey( this.getYamaName( "gpxdata" ).get() ) ) return;
 
-        GpxManager gpx = this.m_gpxs.get( this.getYamaName( "gpxdata" ).get() );
+        GpxData gpx = this.m_gpxs.get( this.getYamaName( "gpxdata" ).get() );
         if ( gpx == null ) return;
         if ( ! gpx.isEnable() ) return;
 
@@ -142,7 +171,7 @@ public class YamaDetailData extends StorableConfig {
             // 最高点日時
             this.overwriteYamaData(
                 "gpxHighTime"
-                , ToolDate.Format( gpx.getHigh().get().getTime().orElse(null), "uuuu/MM/dd hh:mm:ss" ).orElse( "" )
+                , ToolDate.Format( gpx.getHigh().get().getTime().orElse(null), "uuuu/MM/dd HH:mm:ss" ).orElse( "" )
             );
         }
 
@@ -152,7 +181,7 @@ public class YamaDetailData extends StorableConfig {
             // 最低点日時
             this.overwriteYamaData(
                 "gpxLowTime"
-                , ToolDate.Format( gpx.getLow().get().getTime().orElse(null), "uuuu/MM/dd hh:mm:ss" ).orElse( "" )
+                , ToolDate.Format( gpx.getLow().get().getTime().orElse(null), "uuuu/MM/dd HH:mm:ss" ).orElse( "" )
             );
         }
 
@@ -162,7 +191,7 @@ public class YamaDetailData extends StorableConfig {
             // 登山日時
             this.overwriteYamaData(
                 "gpxStartTime"
-                , ToolDate.Format( gpx.getStart().get().getTime().orElse(null), "uuuu/MM/dd hh:mm:ss" ).orElse( "" )
+                , ToolDate.Format( gpx.getStart().get().getTime().orElse(null), "uuuu/MM/dd HH:mm:ss" ).orElse( "" )
             );
         }
 
@@ -172,7 +201,7 @@ public class YamaDetailData extends StorableConfig {
             // 下山日時
             this.overwriteYamaData(
                 "gpxEndTime"
-                , ToolDate.Format( gpx.getEnd().get().getTime().orElse(null), "uuuu/MM/dd hh:mm:ss" ).orElse( "" )
+                , ToolDate.Format( gpx.getEnd().get().getTime().orElse(null), "uuuu/MM/dd HH:mm:ss" ).orElse( "" )
             );
         }
 
@@ -187,7 +216,7 @@ public class YamaDetailData extends StorableConfig {
             && gpx.getHigh().isPresent()
             ){
             // 高低差(登山)
-            this.overwriteYamaData( "gpxGainAssent"
+            this.overwriteYamaData( "gpxGainAscent"
                 , ( gpx.getHigh().get().ele - gpx.getStart().get().ele ) + "" );
 
         }
@@ -242,6 +271,7 @@ public class YamaDetailData extends StorableConfig {
                 gd_d += beforetp.ele - tp.ele;
                 time_d += TrackLib.distanceSec( beforetp, tp );
             }
+            beforetp = tp;
         }
             
         this.overwriteYamaData( "gpxHorizontalDistance", hd + "" ); // 水平距離

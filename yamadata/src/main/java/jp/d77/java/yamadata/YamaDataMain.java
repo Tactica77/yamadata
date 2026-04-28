@@ -15,9 +15,9 @@ import jp.d77.java.tools.BasicIO.Debugger;
 import jp.d77.java.tools.BasicIO.ToolNums;
 import jp.d77.java.tools.HtmlIO.AbstractWebPage;
 import jp.d77.java.tools.HtmlIO.WebConfig;
-import jp.d77.java.yamadata.Datas.YamaDataConfig;
+import jp.d77.java.yamadata.Datas.YamaWebConfig;
+import jp.d77.java.yamadata.Pages.WebGpxViewer;
 import jp.d77.java.yamadata.Pages.WebTop;
-import jp.d77.java.yamadata.Pages.WebUploadGpx;
 import jp.d77.java.yamadata.Pages.WebYamaDetail;
 import jp.d77.java.yamadata.Pages.WebYamaList;
 
@@ -29,47 +29,23 @@ public class YamaDataMain {
         Debugger.InfoPrint( "------ START ------" );
 
         // 表示用クラスの設定
-        AbstractWebPage web = new WebTop( new YamaDataConfig( "/" ) );
+        AbstractWebPage web = new WebTop( new YamaWebConfig( "/" ) );
         this.setForm( request, web.getConfig() );
 
         return this.procWeb( web );
     }    
 
-    @RequestMapping("/upload_gpx")  // ルートへこのメソッドをマップする
-    @SuppressWarnings("null")
-    public String uploads( HttpServletRequest request ) {
+    @RequestMapping("/gpxviewer")  // ルートへこのメソッドをマップする
+    public String gpxviewer( HttpServletRequest request ) {
         Debugger.init();
         Debugger.InfoPrint( "------ START ------" );
 
-        // メイン処理初期化
-        AbstractWebPage web = new WebUploadGpx( new YamaDataConfig( "/upload_gpx" ) );
+        // 表示用クラスの設定
+        AbstractWebPage web = new WebGpxViewer( new YamaWebConfig( "/gpxviewer" ) );
         this.setForm( request, web.getConfig() );
 
-        YamaDataConfig ydcfg = ((WebUploadGpx)web).getConfig();
-        /**
-         * アップロード処理
-         */
-        if (request instanceof MultipartHttpServletRequest multipartRequest) {
-            MultipartFile upload_file = multipartRequest.getFile("upload_file");
-
-            try {
-                if ( upload_file != null && !upload_file.isEmpty() && upload_file.getOriginalFilename().endsWith("gpx" ) ){
-                    upload_file.transferTo( ydcfg.getUploadTempFullPath() );
-                    // アップロード成功
-                    ydcfg.enabledUploadTempFile(true);
-                    Debugger.InfoPrint( "Upload:" + ydcfg.getUploadTempFullPath() );
-                    ydcfg.addAlertInfo( "Uploaded: " + ydcfg.getUploadTempFullPath() );
-                }
-            } catch (IOException e) {
-                Debugger.ErrorPrint( "Upload error:" + upload_file.getOriginalFilename() );
-                ydcfg.addAlertInfo( "Upload error: " + upload_file.getOriginalFilename() );
-                e.printStackTrace();
-            }
-        }
-
-        // メイン処理実行
         return this.procWeb( web );
-    }
+    }    
 
     @RequestMapping("/yamalist")  // ルートへこのメソッドをマップする
     public String yamalist( HttpServletRequest request ) {
@@ -77,7 +53,7 @@ public class YamaDataMain {
         Debugger.InfoPrint( "------ START ------" );
 
         // 表示用クラスの設定
-        AbstractWebPage web = new WebYamaList( new YamaDataConfig( "/yamalist" ) );
+        AbstractWebPage web = new WebYamaList( new YamaWebConfig( "/yamalist" ) );
         this.setForm( request, web.getConfig() );
 
         return this.procWeb( web );
@@ -90,10 +66,10 @@ public class YamaDataMain {
         Debugger.InfoPrint( "------ START ------" );
 
         // メイン処理初期化
-        AbstractWebPage web = new WebYamaDetail( new YamaDataConfig( "/yamadata" ) );
+        AbstractWebPage web = new WebYamaDetail( new YamaWebConfig( "/yamadata" ) );
         this.setForm( request, web.getConfig() );
 
-        YamaDataConfig ydcfg = ((WebYamaDetail)web).getConfig();
+        YamaWebConfig ydcfg = ((WebYamaDetail)web).getConfig();
         /**
          * アップロード処理
          */

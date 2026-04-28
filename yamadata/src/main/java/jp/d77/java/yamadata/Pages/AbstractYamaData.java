@@ -7,11 +7,11 @@ import jp.d77.java.tools.HtmlIO.BSS;
 import jp.d77.java.tools.HtmlIO.BSSForm;
 import jp.d77.java.tools.HtmlIO.HtmlString;
 import jp.d77.java.tools.HtmlIO.InterfaceWebPage;
-import jp.d77.java.yamadata.Datas.YamaDataConfig;
+import jp.d77.java.yamadata.Datas.YamaWebConfig;
 
 public class AbstractYamaData extends AbstractWebPage implements InterfaceWebPage {
     // コンストラクタ
-    public AbstractYamaData( YamaDataConfig cfg ){
+    public AbstractYamaData( YamaWebConfig cfg ){
         super(cfg);
         Debugger.TracePrint();
     }
@@ -64,7 +64,7 @@ public class AbstractYamaData extends AbstractWebPage implements InterfaceWebPag
 
         this.getHtml().addString( BSS.getNavbarHeader( title ) );
         this.getHtml().addString( BSS.getNavbarLinkItem( BSOpts.create().title("TOP").href("/") ) );
-        this.getHtml().addString( BSS.getNavbarLinkItem( BSOpts.create().title("UploadGPX").href("/upload_gpx") ) );
+        this.getHtml().addString( BSS.getNavbarLinkItem( BSOpts.create().title("List").href("/yamalist") ) );
         /*
         this.getHtml().addString( BSS.getNavbarLinkItem( BSOpts.init().title("LOGS").href("/logs") ) );
 
@@ -148,8 +148,8 @@ public class AbstractYamaData extends AbstractWebPage implements InterfaceWebPag
     }
 
     @Override
-    public YamaDataConfig getConfig(){
-        return (YamaDataConfig) super.getConfig();
+    public YamaWebConfig getConfig(){
+        return (YamaWebConfig) super.getConfig();
     }
     
     

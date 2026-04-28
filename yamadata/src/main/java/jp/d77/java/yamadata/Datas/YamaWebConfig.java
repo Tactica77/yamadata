@@ -6,10 +6,10 @@ import java.nio.file.FileSystems;
 import jp.d77.java.tools.HtmlIO.WebConfig;
 import jp.d77.java.yamadata.YamaDataApps;
 
-public class YamaDataConfig extends WebConfig {
+public class YamaWebConfig extends WebConfig {
     private boolean m_bUploadTempFile = false;
 
-    public YamaDataConfig( String uri ){
+    public YamaWebConfig( String uri ){
         super( uri );
     }
     

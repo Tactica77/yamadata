@@ -16,15 +16,18 @@ import jp.d77.java.tools.BasicIO.Debugger;
 import jp.d77.java.tools.BasicIO.ToolDate;
 import jp.d77.java.tools.HtmlIO.BSOpts;
 import jp.d77.java.tools.HtmlIO.BSSForm;
-import jp.d77.java.yamadata.Datas.GpxManager;
-import jp.d77.java.yamadata.Datas.YamaDataConfig;
+import jp.d77.java.tools.HtmlIO.HtmlString;
+import jp.d77.java.yamadata.Datas.GpxData;
+import jp.d77.java.yamadata.Datas.YamaWebConfig;
 import jp.d77.java.yamadata.Datas.YamaDetailData;
+import jp.d77.java.yamadata.Library.YamaHtmlLib;
+import jp.d77.java.yamadata.Library.YamaHtmlLib.GPX_ITEM;
 
 public class WebYamaDetail extends AbstractYamaData {
     private YamaDetailData m_yamadata;
     private Map<Integer,Map<String,String>> m_editmenu = null;
     
-    public WebYamaDetail( YamaDataConfig cfg ) {
+    public WebYamaDetail( YamaWebConfig cfg ) {
         super( cfg );
         this.setHtmlTitle( "YamaData" );
         this.m_yamadata = new YamaDetailData( this.getConfig().getDataFilePath() + "yamadata.cfg", this.getConfig() );
@@ -72,7 +75,7 @@ public class WebYamaDetail extends AbstractYamaData {
         if ( this.getConfig().checkUploadedTmpFile() ){
             // gpxファイルがアップロードされた
             try {
-                GpxManager gpx = new GpxManager( this.getConfig().getUploadTempFullPath() );
+                GpxData gpx = new GpxData( this.getConfig().getUploadTempFullPath() );
                 if ( gpx.getTrackPoints().size() > 0 ){
                     String newFileName;
                     newFileName = ToolDate.Format( gpx.getTrackPoints().get(0).getTime().orElse(null), "uuuuMMdd-hhmmss").orElse("")
@@ -86,7 +89,7 @@ public class WebYamaDetail extends AbstractYamaData {
                     this.getConfig().addAlertInfo( "saved: " + this.getConfig().getDataFilePath() + "gpx/" + newFileName );
                     this.m_yamadata.overwriteYamaData( "gpxfiles", newFileName );
                     this.m_yamadata.LoadGpx();
-                    this.m_yamadata.saveGpxDatas();
+                    this.m_yamadata.createGpxDatas();
                     save = true;
                 }
             } catch (Exception e) {
@@ -99,6 +102,13 @@ public class WebYamaDetail extends AbstractYamaData {
             for( String s: this.getConfig().gets( "edit_select_gpx" ) ){
                 if ( this.removeGpxFile(s) ) save = true;
             }
+        }
+
+        if ( this.getConfig().get( "edit_regen_gpx" ).isPresent() ){
+            // データの再作成
+            this.m_yamadata.LoadGpx();
+            this.m_yamadata.createGpxDatas();
+            save = true;
         }
 
         if ( this.getConfig().get( "edit_save" ).isPresent() ){
@@ -215,6 +225,7 @@ public class WebYamaDetail extends AbstractYamaData {
         f.divTop(12);
 
         f.formSubmit( BSOpts.create().label( "SAVE" ).name( "edit_save" ).value( "ADD NEW" ) );
+        f.formSubmit( BSOpts.create().label( "REGEN DATA" ).name( "edit_regen_gpx" ).value( "REGEN DATA" ) );
         f.formSubmit( BSOpts.create().label( "REMOVE GPX" ).name( "edit_remove_gpx" ).value( "REMOVE GPX" ) );
 
         f.divBtm(12);
@@ -244,15 +255,6 @@ public class WebYamaDetail extends AbstractYamaData {
             );
         f.tableRowBtm();
 
-        /*
-        this.m_editmenu.put( 1, new HashMap<>() );
-        this.m_editmenu.get( 1 ).put( "name", "ヤマップ" );
-        this.m_editmenu.get( 1 ).put( "type", "link_text" );
-
-        this.m_editmenu.put( 2, new HashMap<>() );
-        this.m_editmenu.get( 2 ).put( "name", "ヤマレコ" );
-        this.m_editmenu.get( 2 ).put( "type", "link_text" );
- */
         for ( Integer mid: this.m_editmenu.keySet() ){
             if ( ! this.m_editmenu.get(mid).containsKey("name")
                 || ! this.m_editmenu.get(mid).containsKey("type") ) continue;
@@ -291,7 +293,7 @@ public class WebYamaDetail extends AbstractYamaData {
                     .type( "checkbox" )
                     .name( "edit_select_gpx" )
                     .value( gpx_file )
-            ).toString() + gpx_file );
+            ).toString() + this.gpxViewerLink( gpx_file ) );
         }
         f.tableRowTop()
             .tableTh( "GPX Files" )
@@ -300,13 +302,64 @@ public class WebYamaDetail extends AbstractYamaData {
             );
         f.tableRowBtm();
 
-
         f.tableBtm();
         f.divBtm(12);
         f.divRowBtm();
 
-        return f.toString();
+        String res = f.toString();
+
+        List<GPX_ITEM> items = new ArrayList<>(List.of(
+            GPX_ITEM.ELE_START
+            ,GPX_ITEM.ELE_END
+            ,GPX_ITEM.ELE_HIGH
+            ,GPX_ITEM.ELE_LOW
+
+            ,GPX_ITEM.HORIZON_DEST_ALL
+            ,GPX_ITEM.HORIZON_DEST_ASCENT
+            ,GPX_ITEM.HORIZON_DEST_DESENT
+        ));
+        res += YamaHtmlLib.displayListHead( items );
+        res += YamaHtmlLib.displayListBody( items, this.m_yamadata );
+        res += YamaHtmlLib.displayListFoot();
+
+        items = new ArrayList<>(List.of(
+            GPX_ITEM.GAIN_ALL
+            ,GPX_ITEM.GAIN_ASCENT
+            ,GPX_ITEM.GAIN_DESENT
+
+            ,GPX_ITEM.TOTAL_GAIN_ASCENT
+            ,GPX_ITEM.TOTAL_GAIN_DESENT
+
+            ,GPX_ITEM.SLOPE_ASCENT
+            ,GPX_ITEM.SLOPE_DESENT
+        ));
+        res += YamaHtmlLib.displayListHead( items );
+        res += YamaHtmlLib.displayListBody( items, this.m_yamadata );
+        res += YamaHtmlLib.displayListFoot();
+
+        items = new ArrayList<>(List.of(
+            GPX_ITEM.TIME_ALL
+            ,GPX_ITEM.TIME_ASCENT
+            ,GPX_ITEM.TIME_DESENT
+
+            ,GPX_ITEM.DATETIME_START
+            ,GPX_ITEM.DATETIME_HEIGHT
+
+            ,GPX_ITEM.DATETIME_LOW
+            ,GPX_ITEM.DATETIME_END
+        ));
+        res += YamaHtmlLib.displayListHead( items );
+        res += YamaHtmlLib.displayListBody( items, this.m_yamadata );
+        res += YamaHtmlLib.displayListFoot();
+
+        return res;
     }    
+
+    private String gpxViewerLink( String f ){
+        if ( f == null ) return "-";
+        if ( ! YamaHtmlLib.isValidGpxName( f ) ) return HtmlString.HtmlEscape(f);
+        return "<A Href=\"/gpxviewer?edit_select_gpx=" + f + "\" target=\"_blank\">" + f + "</A>";
+    }
 
     private boolean EditSave(){
         Debugger.TracePrint();

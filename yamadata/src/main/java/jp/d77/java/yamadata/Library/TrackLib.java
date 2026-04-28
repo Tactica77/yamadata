@@ -3,6 +3,8 @@ package jp.d77.java.yamadata.Library;
 import java.time.Duration;
 import java.time.LocalDateTime;
 import java.time.OffsetDateTime;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Optional;
 
 public class TrackLib {
@@ -208,4 +210,106 @@ public class TrackLib {
 
         return new TrackPoint(lat, lon, ele, time);
     }
+
+
+    /**
+     * トラックデータをmeterメートル単位に変換したGpxDataを取得する
+     * @param meter
+     * @return
+     */
+    public static Optional<List<TrackPoint>> getRegularLengthMeter( List<TrackPoint> tps, int meter ){
+
+        List<TrackPoint> restp = new ArrayList<>();
+        TrackPoint beforetp = null;
+
+        for ( TrackPoint tp: tps ){
+            if ( beforetp == null ){
+                // Start
+                beforetp = tp.clone();
+                beforetp.setDistMeter( 0.0 );
+                beforetp.setDistSec( 0L );
+                restp.add( beforetp );
+                continue;
+            }
+            // beforetpからの距離を計測
+            if ( tp.isEmpty() ){
+                // 別のトラックへジャンプ
+                TrackPoint w = tp.clone();
+                w.setDistMeter( beforetp.distMeter.orElse( 0d ) );
+                w.setDistSec( beforetp.distSec.orElse( 0L ) );
+                restp.add( w );
+                beforetp = w;
+                continue;
+            }
+            double m = TrackLib.distanceMeter( beforetp, tp );
+            if ( meter <= m ){
+                // 次の点に到達した
+                TrackPoint w = TrackLib.fixedMeter( beforetp, tp, meter );
+                w.setDistMeter( beforetp.distMeter.orElse( 0d ) + TrackLib.distanceMeter( beforetp, w ) );
+                w.setDistSec( beforetp.distSec.orElse( 0L ) + TrackLib.distanceSec( beforetp, w ) );
+                restp.add( w );
+                beforetp = w;
+            }
+        }
+        // 終端を追加
+        TrackPoint w = tps.get( tps.size() - 1 ).clone();
+        if ( beforetp == null ){
+            w.setDistMeter( 0d);
+            w.setDistSec( 0L );
+        }else{
+            w.setDistMeter( beforetp.distMeter.orElse( 0d ) + TrackLib.distanceMeter( beforetp, w ) );
+            w.setDistSec( beforetp.distSec.orElse( 0L ) + TrackLib.distanceSec( beforetp, w ) );
+        }
+        restp.add( w );
+
+        return Optional.ofNullable( restp );
+    }
+
+    public static Optional<List<TrackPoint>> getRegularTime( List<TrackPoint> tps, long time ){
+        List<TrackPoint> restp = new ArrayList<>();
+        TrackPoint beforetp = null;
+
+        for ( TrackPoint tp: tps ){
+            if ( beforetp == null ){
+                // Start
+                beforetp = tp.clone();
+                beforetp.setDistMeter( 0.0 );
+                beforetp.setDistSec( 0L );
+                restp.add( beforetp );
+                continue;
+            }
+            // beforetpからの距離を計測
+            if ( tp.isEmpty() ){
+                // 別のトラックへジャンプ
+                TrackPoint w = tp.clone();
+                w.setDistMeter( beforetp.distMeter.orElse( 0d ) );
+                w.setDistSec( beforetp.distSec.orElse( 0L ) );
+                restp.add( w );
+                beforetp = w;
+                continue;
+            }
+            Long s = TrackLib.distanceSec( beforetp, tp );
+            if ( time <= s ){
+                // 次の点に到達した
+                TrackPoint w = TrackLib.fixedSec( beforetp, tp, time );
+                w.setDistMeter( beforetp.distMeter.orElse( 0d ) + TrackLib.distanceMeter( beforetp, w ) );
+                w.setDistSec( beforetp.distSec.orElse( 0L ) + TrackLib.distanceSec( beforetp, w ) );
+                restp.add( w );
+                beforetp = w;
+            }
+        }
+        // 終端を追加
+        TrackPoint w = tps.get( tps.size() - 1 ).clone();
+        if ( beforetp == null ){
+            w.setDistMeter( 0d);
+            w.setDistSec( 0L );
+        }else{
+            w.setDistMeter( beforetp.distMeter.orElse( 0d ) + TrackLib.distanceMeter( beforetp, w ) );
+            w.setDistSec( beforetp.distSec.orElse( 0L ) + TrackLib.distanceSec( beforetp, w ) );
+        }
+        restp.add( w );
+
+        return Optional.ofNullable( restp );
+    }
+
 }
