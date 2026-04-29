@@ -6,10 +6,7 @@ import java.nio.file.Paths;
 import java.nio.file.StandardCopyOption;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
-import java.util.TreeMap;
 import java.util.stream.Collectors;
 
 import jp.d77.java.tools.BasicIO.Debugger;
@@ -22,24 +19,15 @@ import jp.d77.java.yamadata.Datas.YamaWebConfig;
 import jp.d77.java.yamadata.Datas.YamaDetailData;
 import jp.d77.java.yamadata.Library.YamaHtmlLib;
 import jp.d77.java.yamadata.Library.YamaHtmlLib.GPX_ITEM;
+import jp.d77.java.yamadata.Library.YamaHtmlLib.YAMA_DATA_TYPE;
 
 public class WebYamaDetail extends AbstractYamaData {
     private YamaDetailData m_yamadata;
-    private Map<Integer,Map<String,String>> m_editmenu = null;
     
     public WebYamaDetail( YamaWebConfig cfg ) {
         super( cfg );
         this.setHtmlTitle( "YamaData" );
         this.m_yamadata = new YamaDetailData( this.getConfig().getDataFilePath() + "yamadata.cfg", this.getConfig() );
-
-        this.m_editmenu = new TreeMap<Integer,Map<String,String>>();
-        this.m_editmenu.put( 1, new HashMap<>() );
-        this.m_editmenu.get( 1 ).put( "name", "ヤマップ" );
-        this.m_editmenu.get( 1 ).put( "type", "link_text" );
-
-        this.m_editmenu.put( 2, new HashMap<>() );
-        this.m_editmenu.get( 2 ).put( "name", "ヤマレコ" );
-        this.m_editmenu.get( 2 ).put( "type", "link_text" );
     }
 
     // 1:init
@@ -51,9 +39,7 @@ public class WebYamaDetail extends AbstractYamaData {
                 this.m_yamadata.setDefaultYamaId( Integer.parseInt( this.getConfig().get( "edit_id" ).get() ) );
             } catch ( NumberFormatException e ) {
             }
-        }
-        if ( ! this.m_yamadata.isSetId() ){
-            this.getConfig().addAlertError( "Yama Id not defined." );
+        }else{
         }
 
     }
@@ -63,6 +49,11 @@ public class WebYamaDetail extends AbstractYamaData {
     public void load() {
         super.load();
         this.m_yamadata.load();
+
+        if ( ! this.m_yamadata.isSetId() ){
+            this.m_yamadata.setDefaultYamaId( this.m_yamadata.getLastIndex() + 1 );
+            //this.getConfig().addAlertError( "Yama Id not defined." );
+        }
     }
 
     // 3:post_save_reload
@@ -72,50 +63,71 @@ public class WebYamaDetail extends AbstractYamaData {
         if ( ! this.m_yamadata.isSetId() ) return;
         boolean save = false;
 
-        if ( this.getConfig().checkUploadedTmpFile() ){
-            // gpxファイルがアップロードされた
-            try {
-                GpxData gpx = new GpxData( this.getConfig().getUploadTempFullPath() );
-                if ( gpx.getTrackPoints().size() > 0 ){
-                    String newFileName;
-                    newFileName = ToolDate.Format( gpx.getTrackPoints().get(0).getTime().orElse(null), "uuuuMMdd-hhmmss").orElse("")
-                        + "_"
-                        + ToolDate.Format( LocalDateTime.now(), "uuuuMMdd-hhmmss").orElse("")
-                        + ".gpx";
-                    Files.move(
-                        this.getConfig().getUploadTempFullPath().toPath()
-                        , Paths.get( this.getConfig().getDataFilePath() + "gpx/" + newFileName )
-                        , StandardCopyOption.REPLACE_EXISTING);
-                    this.getConfig().addAlertInfo( "saved: " + this.getConfig().getDataFilePath() + "gpx/" + newFileName );
-                    this.m_yamadata.overwriteYamaData( "gpxfiles", newFileName );
-                    this.m_yamadata.LoadGpx();
-                    this.m_yamadata.createGpxDatas();
-                    save = true;
+        if ( this.getConfig().get( "edit_save" ).isPresent() ){
+            // SAVE/UPLOADが押下された
+            if ( this.EditSave() ) save = true;
+            if ( this.getConfig().checkUploadedTmpFile() ){
+                // gpxファイルがアップロードされた
+                try {
+                    GpxData gpx = new GpxData( this.getConfig().getUploadTempFullPath() );
+                    if ( gpx.getTrackPoints().size() > 0 ){
+                        String newFileName;
+                        newFileName = ToolDate.Format( gpx.getTrackPoints().get(0).getTime().orElse(null), "uuuuMMdd-hhmmss").orElse("")
+                            + "_"
+                            + ToolDate.Format( LocalDateTime.now(), "uuuuMMdd-hhmmss").orElse("")
+                            + ".gpx";
+                        Files.move(
+                            this.getConfig().getUploadTempFullPath().toPath()
+                            , Paths.get( this.getConfig().getDataFilePath() + "gpx/" + newFileName )
+                            , StandardCopyOption.REPLACE_EXISTING);
+                        this.getConfig().addAlertInfo( "saved: " + this.getConfig().getDataFilePath() + "gpx/" + newFileName );
+                        this.m_yamadata.overwriteYamaData( "gpxfiles", newFileName );
+                        this.m_yamadata.LoadGpx();
+                        this.m_yamadata.createGpxDatas();
+                        save = true;
+                    }
+                } catch (Exception e) {
+                    e.printStackTrace();
                 }
-            } catch (Exception e) {
-                e.printStackTrace();
+            }
+        }
+
+        if ( this.getConfig().get( "edit_remove_data" ).isPresent() ){
+            // REMOVE THIS DATAが押下された
+            if ( this.m_yamadata.getYamaDatas( "gpxfiles" ).length > 0 ){
+                this.getConfig().addAlertError( "GPXをすべて削除しないとデータ削除できません。" );
+            }else{
+                this.m_yamadata.remove();
+                this.m_yamadata.save();
+                this.getConfig().addAlertError( "削除しました。" );
+                return;
             }
         }
 
         if ( this.getConfig().get( "edit_remove_gpx" ).isPresent() && this.getConfig().gets( "edit_select_gpx" ).length > 0 ){
-            // gpxファイル削除
+            // REMOVE GPXが押下された。gpxファイル削除
             for( String s: this.getConfig().gets( "edit_select_gpx" ) ){
-                if ( this.removeGpxFile(s) ) save = true;
+                this.removeGpxFile(s);
+                this.m_yamadata.remove( this.m_yamadata.getYamaName( "gpxfiles" ).get() , s );
+                save = true;
             }
         }
 
         if ( this.getConfig().get( "edit_regen_gpx" ).isPresent() ){
-            // データの再作成
+            // REGEN DATAが押下された。データの再作成
             this.m_yamadata.LoadGpx();
             this.m_yamadata.createGpxDatas();
             save = true;
         }
 
-        if ( this.getConfig().get( "edit_save" ).isPresent() ){
-            if ( this.EditSave() ) save = true;
+        if ( save ) {
+            if ( this.m_yamadata.getYamaData( "title" ).isEmpty() || this.m_yamadata.getYamaData( "title" ).get().isBlank() ){
+                this.getConfig().addAlertError( "タイトルは必須です." );
+            }else{
+                this.m_yamadata.save();
+                this.getConfig().addAlertInfo( "保存しました。" );
+            }
         }
-
-        if ( save ) this.m_yamadata.save();
     }
 
     /**
@@ -177,6 +189,7 @@ public class WebYamaDetail extends AbstractYamaData {
             .formInputHidden( BSOpts.create( "name", "edit_id").value( this.m_yamadata.getYamaId() + "" ) )
             .toString()
         );
+        this.getHtml().addString( this.CommandButton() );
         this.getHtml().addString( this.detailYamaData() );
         this.getHtml().addString( BSSForm.create().formBtm().toString() );
 
@@ -195,41 +208,54 @@ public class WebYamaDetail extends AbstractYamaData {
         super.displayFooter();
     }
     
-    public String detailYamaData(){
+    public String CommandButton(){
         Debugger.TracePrint();
         BSSForm f = BSSForm.create();
 
-        f.divRowTop();
+            f.divRowTop();
 
         // UPLOAD Form
         // LABEL
         f   .divTop(2)
-            .formLabel( BSOpts.create("type", "file" ).set("label", "upload_file" ).set("name", "upload_file" ) )
+            .formLabel( BSOpts.create("type", "file" ).set("label", "Upload GPX File" ).set("name", "upload_file" ) )
             .divBtm(2);
 
         // UPLOAD Form
-        f   .divTop(4).formInput( null ).divBtm(4);
+        f   .divTop(4)
+            .formInput( null )
+            .divBtm(4);
 
         // UPLOAD SUBMIT
-        f   .divTop(2)
-            .formSubmit( BSOpts.create().label( "UPLOAD" ).name( "upload_submit" ).value( "UPLOAD" ) )
-            .divBtm(2);
+//        f   .divTop(2)
+//            .formSubmit( BSOpts.create().label( "UPLOAD" ).name( "upload_submit" ).value( "UPLOAD" ) )
+//            .divBtm(2);
 
-        f   .divTop(4)
-            .divBtm(4);
+        f   .divTop(6)
+            .divBtm(6);
         f.divRowBtm();
 
 
         // COMMAND BUTTANS
         f.divRowTop();
-        f.divTop(12);
+        f.divTop(8);
 
-        f.formSubmit( BSOpts.create().label( "SAVE" ).name( "edit_save" ).value( "ADD NEW" ) );
+        f.formSubmit( BSOpts.create().label( "SAVE/UPLOAD" ).name( "edit_save" ).value( "SAVE/UPLOAD" ) );
         f.formSubmit( BSOpts.create().label( "REGEN DATA" ).name( "edit_regen_gpx" ).value( "REGEN DATA" ) );
-        f.formSubmit( BSOpts.create().label( "REMOVE GPX" ).name( "edit_remove_gpx" ).value( "REMOVE GPX" ) );
+        f.divBtm(8);
 
-        f.divBtm(12);
+        f.divTop(4);
+        f.formSubmit( BSOpts.create().label( "REMOVE GPX" ).name( "edit_remove_gpx" ).value( "REMOVE GPX" ) );
+        f.formSubmit( BSOpts.create().label( "REMOVE THIS DATA" ).name( "edit_remove_data" ).value( "REMOVE THIS DATA" ) );
+        f.divBtm(4);
+
         f.divRowBtm();
+
+        return f.toString();
+    }
+
+    public String detailYamaData(){
+        Debugger.TracePrint();
+        BSSForm f = BSSForm.create();
 
         // INPUT TABLES
         f.divRowTop();
@@ -244,39 +270,49 @@ public class WebYamaDetail extends AbstractYamaData {
 
         f.tableBodyTop();
 
+        // ID
+        f.tableRowTop()
+            .tableTh( "ID" )
+            .tableTd( this.m_yamadata.getYamaId() + "" );
+        f.tableRowBtm();
+
         // Title
         f.tableRowTop()
             .tableTh( "Title" )
             .tableTdHtml(
                 BSSForm.create().formInput(
-                    BSOpts.create( "name", "edit_" + this.m_yamadata.getYamaName( "title" ) )
+                    BSOpts.create( "name", "edit_" + this.m_yamadata.getYamaName( "title" ).get() )
                     .value( this.m_yamadata.getYamaData( "title" ).orElse("") )
                 ).toString()
             );
         f.tableRowBtm();
 
-        for ( Integer mid: this.m_editmenu.keySet() ){
-            if ( ! this.m_editmenu.get(mid).containsKey("name")
-                || ! this.m_editmenu.get(mid).containsKey("type") ) continue;
-            if ( this.m_editmenu.get(mid).get("type").equals( "link_text") ){
-                String edit_item;
+        for ( GPX_ITEM gpi: GPX_ITEM.getEditMenu() ){
+            if ( gpi.getType().equals( YAMA_DATA_TYPE.LINK_BLANK ) ){
                 f.tableRowTop()
-                    .tableTh( this.m_editmenu.get(mid).get( "name" ) );
+                    .tableTh( gpi.getLabel() );
 
-                edit_item = this.m_yamadata.getYamaName( "editdata" + mid + "_title" ).get();
+                String itemname;
+                itemname = gpi.getItemName() + "_title";
                 String form_data =
                     BSSForm.create()
-                    .formLabel( BSOpts.create( "name", "edit_" + edit_item ).label( "タイトル" ) )
+                    .formLabel(
+                        BSOpts.create( "name", "edit_" + this.m_yamadata.getYamaName( itemname ).get() )
+                        .label( "タイトル" ) )
                     .formInput(
-                        BSOpts.create( "name", "edit_" + edit_item )
-                        .value( this.m_yamadata.getYamaData( edit_item ).orElse("") )
+                        BSOpts.create( "name", "edit_" + this.m_yamadata.getYamaName( itemname ).get() )
+                        .value( this.m_yamadata.getYamaData( itemname ).orElse("") )
                     ).toString();
-                edit_item = this.m_yamadata.getYamaName( "editdata" + mid + "_link" ).get();
-                form_data += BSSForm.create()
-                    .formLabel( BSOpts.create( "name", "edit_" + edit_item ).label( " URL" ) )
+
+                itemname = gpi.getItemName() + "_link";
+                form_data +=
+                    BSSForm.create()
+                    .formLabel(
+                        BSOpts.create( "name", "edit_" + this.m_yamadata.getYamaName( itemname ).get() )
+                        .label( "URL" ) )
                     .formInput(
-                        BSOpts.create( "name", "edit_" + edit_item )
-                        .value( this.m_yamadata.getYamaData( edit_item ).orElse("") )
+                        BSOpts.create( "name", "edit_" + this.m_yamadata.getYamaName( itemname ).get() )
+                        .value( this.m_yamadata.getYamaData( itemname ).orElse("") )
                     ).toString();
 
                 f.tableTdHtml( form_data );
@@ -361,34 +397,39 @@ public class WebYamaDetail extends AbstractYamaData {
         return "<A Href=\"/gpxviewer?edit_select_gpx=" + f + "\" target=\"_blank\">" + f + "</A>";
     }
 
+    /**
+     * 編集画面データの保管処理
+     * @return
+     */
     private boolean EditSave(){
         Debugger.TracePrint();
         boolean save = false;
 
-        if ( this.getConfig().get( "edit_" + this.m_yamadata.getYamaName( "title" ) ).isPresent() ){
+        if ( this.getConfig().get( "edit_" + this.m_yamadata.getYamaName( "title" ).get() ).isPresent() ){
+            Debugger.InfoPrint( this.m_yamadata.getYamaName( "title" ).orElse("") + " <- " + this.getConfig().get( "edit_" + this.m_yamadata.getYamaName( "title" ).get() ).get());
             this.m_yamadata.overwrite(
                 this.m_yamadata.getYamaName( "title" ).orElse("")
-                , this.getConfig().get( "edit_" + this.m_yamadata.getYamaName( "title" ) ).get()
+                , this.getConfig().get( "edit_" + this.m_yamadata.getYamaName( "title" ).get() ).get()
             );
             save = true;
         }
 
-        for ( Integer mid: this.m_editmenu.keySet() ){
-            String edit_item;
-            if ( this.m_editmenu.get(mid).get("type").equals( "link_text") ){
-                edit_item = this.m_yamadata.getYamaName( "editdata" + mid + "_title" ).get();
-                if ( this.getConfig().get( "edit_" + edit_item ).isPresent() ){
-                    this.m_yamadata.overwrite( edit_item , this.getConfig().get( "edit_" + edit_item ).get() );
-                    save = true;
-                }
+        for ( GPX_ITEM gpi: GPX_ITEM.getEditMenu() ){
+            String itemname;
 
-                edit_item = this.m_yamadata.getYamaName( "editdata" + mid + "_link" ).get();
-                if ( this.getConfig().get( "edit_" + edit_item ).isPresent() ){
-                    this.m_yamadata.overwrite( edit_item , this.getConfig().get( "edit_" + edit_item ).get() );
-                    save = true;
-                }
+            itemname = this.m_yamadata.getYamaName( gpi.getItemName() + "_title" ).orElse("");
+            if ( this.getConfig().get( "edit_" + itemname ).isPresent() ){
+                Debugger.InfoPrint( itemname + " <- " + this.getConfig().get( "edit_" + itemname ).get() );
+                this.m_yamadata.overwrite( itemname , this.getConfig().get( "edit_" + itemname ).get() );
+                save = true;
             }
 
+            itemname = this.m_yamadata.getYamaName( gpi.getItemName() + "_link" ).orElse("");
+            if ( this.getConfig().get( "edit_" + itemname ).isPresent() ){
+                Debugger.InfoPrint( itemname + " <- " + this.getConfig().get( "edit_" + itemname ).get() );
+                this.m_yamadata.overwrite( itemname , this.getConfig().get( "edit_" + itemname ).get() );
+                save = true;
+            }
         }
 
         return save;

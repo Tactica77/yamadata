@@ -17,7 +17,6 @@ import jp.d77.java.tools.HtmlIO.AbstractWebPage;
 import jp.d77.java.tools.HtmlIO.WebConfig;
 import jp.d77.java.yamadata.Datas.YamaWebConfig;
 import jp.d77.java.yamadata.Pages.WebGpxViewer;
-import jp.d77.java.yamadata.Pages.WebTop;
 import jp.d77.java.yamadata.Pages.WebYamaDetail;
 import jp.d77.java.yamadata.Pages.WebYamaList;
 
@@ -29,7 +28,7 @@ public class YamaDataMain {
         Debugger.InfoPrint( "------ START ------" );
 
         // 表示用クラスの設定
-        AbstractWebPage web = new WebTop( new YamaWebConfig( "/" ) );
+        AbstractWebPage web = new WebYamaList( new YamaWebConfig( "/" ) );
         this.setForm( request, web.getConfig() );
 
         return this.procWeb( web );

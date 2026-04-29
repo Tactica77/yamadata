@@ -25,10 +25,25 @@ public class YamaDetailData extends StorableConfig {
         this.m_gpxs = new HashMap<>();
         this.m_cfg = cfg;
     }
- 
-    public boolean isSetId(){
-        if ( this.m_yamaid == null ) return false;
-        return true;
+
+    public void remove(){
+        Pattern p = Pattern.compile("^data(\\d+)_.*$");
+        List<String> remove_keys = new ArrayList<>();
+        for ( String key: this.keySet() ){
+            if ( key.startsWith( "data" ) ){
+                Matcher m = p.matcher(key);
+                if (m.matches()) {
+                    try {
+                        Integer id = Integer.parseInt(m.group(1));
+                        if ( this.getYamaId().equals( id ) ) remove_keys.add( key );
+                    } catch (Exception e) {
+                    }
+                }
+            }
+        }
+        for ( String key: remove_keys ){
+            this.remove( key );
+        }
     }
 
     /**
@@ -38,7 +53,7 @@ public class YamaDetailData extends StorableConfig {
     public List<Integer> getIndexList(){
         Map<Integer,Boolean> res = new HashMap<>();
         Pattern p = Pattern.compile("^data(\\d+)_.*$");
-        for ( String key: this.enumKey() ){
+        for ( String key: this.keySet() ){
             if ( key.startsWith( "data" ) ){
                 Matcher m = p.matcher(key);
                 if (m.matches()) {
@@ -55,8 +70,19 @@ public class YamaDetailData extends StorableConfig {
         return list;
     }
 
+    public int getLastIndex(){
+        List<Integer> w = this.getIndexList();
+        if ( w.size() <= 0 ) return 0;
+        return w.get( w.size() - 1 );
+    }
+
     public Integer getYamaId(){
         return this.m_yamaid;
+    }
+
+    public boolean isSetId(){
+        if ( this.m_yamaid == null ) return false;
+        return true;
     }
 
     /**

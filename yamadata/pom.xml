@@ -5,7 +5,7 @@
 
   <groupId>jp.d77.java</groupId>
   <artifactId>yamadata</artifactId>
-  <version>0.0.2</version>
+  <version>0.0.3</version>
 
   <name>yamadata</name>
   <!-- FIXME change it to the project's website -->
@@ -17,7 +17,7 @@
 		<maven.compiler.source>1.7</maven.compiler.source>
 		<maven.compiler.target>1.7</maven.compiler.target>
 		<java.version>20</java.version>
-		<release.date>2026-04-29</release.date>
+		<release.date>2026-04-30</release.date>
 	</properties>
 
 	<parent>
@@ -48,7 +48,7 @@
   		<dependency>
     		<groupId>jp.d77.java.tools</groupId>
     		<artifactId>basic_io_tools</artifactId>
-    		<version>1.1.27</version>
+    		<version>1.1.33</version>
   		</dependency>
 
   	</dependencies>

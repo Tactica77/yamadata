@@ -63,8 +63,7 @@ public class AbstractYamaData extends AbstractWebPage implements InterfaceWebPag
         String title = this.getHtmlTitle();
 
         this.getHtml().addString( BSS.getNavbarHeader( title ) );
-        this.getHtml().addString( BSS.getNavbarLinkItem( BSOpts.create().title("TOP").href("/") ) );
-        this.getHtml().addString( BSS.getNavbarLinkItem( BSOpts.create().title("List").href("/yamalist") ) );
+        this.getHtml().addString( BSS.getNavbarLinkItem( BSOpts.create().title("LIST").href("/") ) );
         /*
         this.getHtml().addString( BSS.getNavbarLinkItem( BSOpts.init().title("LOGS").href("/logs") ) );
 
