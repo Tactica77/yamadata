@@ -2,6 +2,7 @@ package jp.d77.java.yamadata.Library;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.TreeMap;
 
 import jp.d77.java.tools.BasicIO.Debugger;
 import jp.d77.java.tools.BasicIO.ToolNums;
@@ -62,29 +63,37 @@ public class YamaHtmlLib {
         public static List<GPX_ITEM> getEditMenu(){ return new ArrayList<>( List.of( EDITMENU1, EDITMENU2 ) ); }
     }
     public static enum YAMA_DATA_TYPE { TEXT, DOUBLE_METER, PERCENT, DATETIME, ETIME, LINK_BLANK }
-    public static enum YAMA_GRAPH_TYPE { METER, ZERO_START, MINUTE }
+    public static enum YAMA_GRAPH_TYPE { METER, METER_ZERO_START, MINUTE, MINUTE_ZERO_START }
 
     public static String displayGraph( List<GpxData> gpxs, YAMA_GRAPH_TYPE type ){
+        Debugger.TracePrint();
         List<GpxData> graph_gpxs = new ArrayList<>();
 
+        // データ形式を変換
         for( GpxData gpx: gpxs ){
             try {
                 if ( type == YAMA_GRAPH_TYPE.METER ){
                     graph_gpxs.add(
                         new GpxData( gpx.getName()
-                        , TrackLib.getRegularLengthMeter( gpx.getTrackPoints(), 50 ).orElse( new ArrayList<>() ) )
+                        , TrackLib.getRegularLengthMeter( gpx.getTrackPoints(), 50 ).orElse( new TreeMap<>() ) )
                     );
 
-                }else if ( type == YAMA_GRAPH_TYPE.ZERO_START ){
+                }else if ( type == YAMA_GRAPH_TYPE.METER_ZERO_START ){
                     graph_gpxs.add(
                         new GpxData( gpx.getName()
-                        , TrackLib.getRegularLengthMeter( gpx.getTrackPoints(), 50 ).orElse( new ArrayList<>() ) )
+                        , TrackLib.getRegularLengthMeter( gpx.getTrackPoints(), 50 ).orElse( new TreeMap<>() ) )
                     );
 
                 }else if ( type == YAMA_GRAPH_TYPE.MINUTE ){
                     graph_gpxs.add(
                         new GpxData( gpx.getName()
-                        , TrackLib.getRegularTime( gpx.getTrackPoints(), 50 ).orElse( new ArrayList<>() ) )
+                        , TrackLib.getRegularTime( gpx.getTrackPoints(), 50 ).orElse( new TreeMap<>() ) )
+                    );
+
+                }else if ( type == YAMA_GRAPH_TYPE.MINUTE_ZERO_START ){
+                    graph_gpxs.add(
+                        new GpxData( gpx.getName()
+                        , TrackLib.getRegularTime( gpx.getTrackPoints(), 50 ).orElse( new TreeMap<>() ) )
                     );
                 }
             } catch (Exception e) {
@@ -92,6 +101,7 @@ public class YamaHtmlLib {
             }
         }
         
+        // トラック数を取得
         int TrackSize = 0;
         HtmlGraph graph = new HtmlGraph();
 
@@ -116,7 +126,7 @@ public class YamaHtmlLib {
                         + "\""
                         , gpx.getName(),  (float)tp.ele );
 
-                }else if ( type == YAMA_GRAPH_TYPE.ZERO_START ){
+                }else if ( type == YAMA_GRAPH_TYPE.METER_ZERO_START ){
                     graph.getDbf().set(
                         "\""
                         + ToolNums.Double2Str( tp.distMeter.orElse( 0d ), 0 )
@@ -129,6 +139,13 @@ public class YamaHtmlLib {
                         + ToolNums.Double2Str( tp.distMeter.orElse( 0d ), 0 )
                         + "\""
                         , gpx.getName(),  (float)( tp.ele ) );
+
+                }else if ( type == YAMA_GRAPH_TYPE.MINUTE_ZERO_START ){
+                    graph.getDbf().set(
+                        "\""
+                        + ToolNums.Double2Str( tp.distMeter.orElse( 0d ), 0 )
+                        + "\""
+                        , gpx.getName(),  (float)( tp.ele - gpx.getStart().orElse( tp ).ele ) );
                 }
             }
         }

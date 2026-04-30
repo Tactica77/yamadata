@@ -94,9 +94,6 @@ public class AbstractYamaData extends AbstractWebPage implements InterfaceWebPag
         */
 
         this.getHtml().addString( BSS.getNavbarFooter() );
-
-        this.getHtml().addStringCr( "<DIV class=\"container-fluid\">")
-            .addStringCr("<DIV class=\"row\">" );
     }
 
     // 7:displayInfo

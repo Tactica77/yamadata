@@ -183,16 +183,36 @@ public class WebYamaDetail extends AbstractYamaData {
         if ( ! this.m_yamadata.isSetId() ) return;
         super.displayBody();
 
-        this.getHtml().addString(
-            BSSForm.create()
-            .formTop( this.getUri(), true)
-            .formInputHidden( BSOpts.create( "name", "edit_id").value( this.m_yamadata.getYamaId() + "" ) )
-            .toString()
-        );
-        this.getHtml().addString( this.CommandButton() );
-        this.getHtml().addString( this.detailYamaData() );
-        this.getHtml().addString( BSSForm.create().formBtm().toString() );
+        BSSForm f = BSSForm.create();
+        f   .formTop( this.getUri(), true)
+            .formInputHidden( BSOpts.create( "name", "edit_id").value( this.m_yamadata.getYamaId() + "" ) );
 
+        f.divRowTop();
+        this.UploadForm(f);
+        f.divRowBtm();
+
+        f.divRowTop();
+        this.CommandButton( f );
+        f.divRowBtm();
+
+        f.divRowTop();
+        this.detailYamaDataBasic(f);
+        f.divRowBtm();
+
+        f.divRowTop();
+        this.detailYamaDataEleHorizon(f);
+        f.divRowBtm();
+
+        f.divRowTop();
+        this.detailYamaDataGainSlope(f);
+        f.divRowBtm();
+
+        f.divRowTop();
+        this.detailYamaDataTime(f);
+        f.divRowBtm();
+
+        f.formBtm();
+        this.getHtml().addString( f.toString() );
         this.getHtml().addStringBr( "Data Path=" + this.getConfig().getDataFilePath() );
     }
 
@@ -208,12 +228,7 @@ public class WebYamaDetail extends AbstractYamaData {
         super.displayFooter();
     }
     
-    public String CommandButton(){
-        Debugger.TracePrint();
-        BSSForm f = BSSForm.create();
-
-            f.divRowTop();
-
+    public void UploadForm( BSSForm f ){
         // UPLOAD Form
         // LABEL
         f   .divTop(2)
@@ -221,24 +236,15 @@ public class WebYamaDetail extends AbstractYamaData {
             .divBtm(2);
 
         // UPLOAD Form
-        f   .divTop(4)
+        f   .divTop(10)
             .formInput( null )
-            .divBtm(4);
-
-        // UPLOAD SUBMIT
-//        f   .divTop(2)
-//            .formSubmit( BSOpts.create().label( "UPLOAD" ).name( "upload_submit" ).value( "UPLOAD" ) )
-//            .divBtm(2);
-
-        f   .divTop(6)
-            .divBtm(6);
-        f.divRowBtm();
-
+            .divBtm(10);
+    }
+    public void CommandButton( BSSForm f ){
+        Debugger.TracePrint();
 
         // COMMAND BUTTANS
-        f.divRowTop();
         f.divTop(8);
-
         f.formSubmit( BSOpts.create().label( "SAVE/UPLOAD" ).name( "edit_save" ).value( "SAVE/UPLOAD" ) );
         f.formSubmit( BSOpts.create().label( "REGEN DATA" ).name( "edit_regen_gpx" ).value( "REGEN DATA" ) );
         f.divBtm(8);
@@ -247,18 +253,12 @@ public class WebYamaDetail extends AbstractYamaData {
         f.formSubmit( BSOpts.create().label( "REMOVE GPX" ).name( "edit_remove_gpx" ).value( "REMOVE GPX" ) );
         f.formSubmit( BSOpts.create().label( "REMOVE THIS DATA" ).name( "edit_remove_data" ).value( "REMOVE THIS DATA" ) );
         f.divBtm(4);
-
-        f.divRowBtm();
-
-        return f.toString();
     }
 
-    public String detailYamaData(){
+    public void detailYamaDataBasic( BSSForm f ){
         Debugger.TracePrint();
-        BSSForm f = BSSForm.create();
 
         // INPUT TABLES
-        f.divRowTop();
         f.divTop(12);
 
         f.tableTop(
@@ -340,9 +340,10 @@ public class WebYamaDetail extends AbstractYamaData {
 
         f.tableBtm();
         f.divBtm(12);
-        f.divRowBtm();
+    }
 
-        String res = f.toString();
+    public void detailYamaDataEleHorizon( BSSForm f ){
+        String res = "";
 
         List<GPX_ITEM> items = new ArrayList<>(List.of(
             GPX_ITEM.ELE_START
@@ -358,7 +359,13 @@ public class WebYamaDetail extends AbstractYamaData {
         res += YamaHtmlLib.displayListBody( items, this.m_yamadata );
         res += YamaHtmlLib.displayListFoot();
 
-        items = new ArrayList<>(List.of(
+        f   .divTop(12)
+            .addStringCr( res )
+            .divBtm(12);
+    }
+    public void detailYamaDataGainSlope( BSSForm f ){
+        String res = "";
+        List<GPX_ITEM> items = new ArrayList<>(List.of(
             GPX_ITEM.GAIN_ALL
             ,GPX_ITEM.GAIN_ASCENT
             ,GPX_ITEM.GAIN_DESENT
@@ -372,8 +379,14 @@ public class WebYamaDetail extends AbstractYamaData {
         res += YamaHtmlLib.displayListHead( items );
         res += YamaHtmlLib.displayListBody( items, this.m_yamadata );
         res += YamaHtmlLib.displayListFoot();
+        f   .divTop(12)
+            .addStringCr( res )
+            .divBtm(12);
+    }
 
-        items = new ArrayList<>(List.of(
+    public void detailYamaDataTime( BSSForm f ){
+        String res = "";
+        List<GPX_ITEM> items = new ArrayList<>(List.of(
             GPX_ITEM.TIME_ALL
             ,GPX_ITEM.TIME_ASCENT
             ,GPX_ITEM.TIME_DESENT
@@ -387,8 +400,9 @@ public class WebYamaDetail extends AbstractYamaData {
         res += YamaHtmlLib.displayListHead( items );
         res += YamaHtmlLib.displayListBody( items, this.m_yamadata );
         res += YamaHtmlLib.displayListFoot();
-
-        return res;
+        f   .divTop(12)
+            .addStringCr( res )
+            .divBtm(12);
     }    
 
     private String gpxViewerLink( String f ){

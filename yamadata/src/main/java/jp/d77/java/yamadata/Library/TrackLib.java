@@ -3,9 +3,10 @@ package jp.d77.java.yamadata.Library;
 import java.time.Duration;
 import java.time.LocalDateTime;
 import java.time.OffsetDateTime;
-import java.util.ArrayList;
 import java.util.List;
+import java.util.NavigableMap;
 import java.util.Optional;
+import java.util.TreeMap;
 
 public class TrackLib {
     private static final double earth_R = 6371000.0; // 地球半径(m)
@@ -60,6 +61,10 @@ public class TrackLib {
         }
         public void setDistMeter( Double m ){
             this.distMeter = Optional.ofNullable( m );
+        }
+        public long getEpochSec(){
+            if ( time.isEmpty() ) return 0;
+            return time.get().toEpochSecond();
         }
 
         public boolean isEmpty(){
@@ -217,9 +222,9 @@ public class TrackLib {
      * @param meter
      * @return
      */
-    public static Optional<List<TrackPoint>> getRegularLengthMeter( List<TrackPoint> tps, int meter ){
+    public static Optional<NavigableMap<Long, TrackPoint>> getRegularLengthMeter( List<TrackPoint> tps, int meter ){
 
-        List<TrackPoint> restp = new ArrayList<>();
+        NavigableMap<Long, TrackPoint> restp = new TreeMap<>();
         TrackPoint beforetp = null;
 
         for ( TrackPoint tp: tps ){
@@ -228,7 +233,7 @@ public class TrackLib {
                 beforetp = tp.clone();
                 beforetp.setDistMeter( 0.0 );
                 beforetp.setDistSec( 0L );
-                restp.add( beforetp );
+                restp.put( beforetp.getEpochSec(), beforetp );
                 continue;
             }
             // beforetpからの距離を計測
@@ -237,7 +242,7 @@ public class TrackLib {
                 TrackPoint w = tp.clone();
                 w.setDistMeter( beforetp.distMeter.orElse( 0d ) );
                 w.setDistSec( beforetp.distSec.orElse( 0L ) );
-                restp.add( w );
+                restp.put( w.getEpochSec(), w );
                 beforetp = w;
                 continue;
             }
@@ -247,7 +252,7 @@ public class TrackLib {
                 TrackPoint w = TrackLib.fixedMeter( beforetp, tp, meter );
                 w.setDistMeter( beforetp.distMeter.orElse( 0d ) + TrackLib.distanceMeter( beforetp, w ) );
                 w.setDistSec( beforetp.distSec.orElse( 0L ) + TrackLib.distanceSec( beforetp, w ) );
-                restp.add( w );
+                restp.put( w.getEpochSec(), w );
                 beforetp = w;
             }
         }
@@ -260,13 +265,13 @@ public class TrackLib {
             w.setDistMeter( beforetp.distMeter.orElse( 0d ) + TrackLib.distanceMeter( beforetp, w ) );
             w.setDistSec( beforetp.distSec.orElse( 0L ) + TrackLib.distanceSec( beforetp, w ) );
         }
-        restp.add( w );
+        restp.put( w.getEpochSec(), w );
 
         return Optional.ofNullable( restp );
     }
 
-    public static Optional<List<TrackPoint>> getRegularTime( List<TrackPoint> tps, long time ){
-        List<TrackPoint> restp = new ArrayList<>();
+    public static Optional<NavigableMap<Long, TrackPoint>> getRegularTime( List<TrackPoint> tps, long time ){
+        NavigableMap<Long, TrackPoint> restp = new TreeMap<>();
         TrackPoint beforetp = null;
 
         for ( TrackPoint tp: tps ){
@@ -275,7 +280,7 @@ public class TrackLib {
                 beforetp = tp.clone();
                 beforetp.setDistMeter( 0.0 );
                 beforetp.setDistSec( 0L );
-                restp.add( beforetp );
+                restp.put( beforetp.getEpochSec(), beforetp );
                 continue;
             }
             // beforetpからの距離を計測
@@ -284,7 +289,7 @@ public class TrackLib {
                 TrackPoint w = tp.clone();
                 w.setDistMeter( beforetp.distMeter.orElse( 0d ) );
                 w.setDistSec( beforetp.distSec.orElse( 0L ) );
-                restp.add( w );
+                restp.put( w.getEpochSec(), w );
                 beforetp = w;
                 continue;
             }
@@ -294,7 +299,7 @@ public class TrackLib {
                 TrackPoint w = TrackLib.fixedSec( beforetp, tp, time );
                 w.setDistMeter( beforetp.distMeter.orElse( 0d ) + TrackLib.distanceMeter( beforetp, w ) );
                 w.setDistSec( beforetp.distSec.orElse( 0L ) + TrackLib.distanceSec( beforetp, w ) );
-                restp.add( w );
+                restp.put( w.getEpochSec(), w );
                 beforetp = w;
             }
         }
@@ -307,7 +312,7 @@ public class TrackLib {
             w.setDistMeter( beforetp.distMeter.orElse( 0d ) + TrackLib.distanceMeter( beforetp, w ) );
             w.setDistSec( beforetp.distSec.orElse( 0L ) + TrackLib.distanceSec( beforetp, w ) );
         }
-        restp.add( w );
+        restp.put( w.getEpochSec(), w );
 
         return Optional.ofNullable( restp );
     }

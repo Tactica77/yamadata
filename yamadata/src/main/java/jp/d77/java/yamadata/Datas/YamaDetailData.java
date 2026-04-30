@@ -142,9 +142,9 @@ public class YamaDetailData extends StorableConfig {
     /**
      * Gpxの読み込み(setDefaultYamaId前提)
      */
-    public void LoadGpx(){
-        if ( this.getYamaName( "gpxfiles" ).isEmpty() ) return;
-        if ( this.m_gpxs.containsKey( this.getYamaName( "gpxdata" ).get() ) ) return;
+    public Optional<GpxData> LoadGpx(){
+        if ( this.getYamaName( "gpxfiles" ).isEmpty() ) return Optional.empty();
+        if ( this.m_gpxs.containsKey( this.getYamaName( "gpxdata" ).get() ) ) return Optional.empty();
 
         GpxData gpx = new GpxData();
         for ( String f: this.getYamaDatas( "gpxfiles" ) ){
@@ -156,8 +156,14 @@ public class YamaDetailData extends StorableConfig {
         }
         if ( gpx.isEnable() ){
             this.m_gpxs.put( this.getYamaName( "gpxdata" ).get(), gpx );
+            return Optional.ofNullable( gpx );
         }
-        return;
+        return Optional.empty();
+    }
+
+    public Optional<GpxData> getGpxData(){
+        if ( this.m_gpxs.containsKey( this.getYamaName( "gpxdata" ).orElse("") ) ) return Optional.empty();
+        return Optional.ofNullable( this.m_gpxs.get( this.getYamaName( "gpxdata" ).get() ) );
     }
 
     /**

@@ -4,7 +4,9 @@ import java.time.OffsetDateTime;
 import java.time.ZoneId;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.NavigableMap;
 import java.util.Optional;
+import java.util.TreeMap;
 import java.io.File;
 
 import javax.xml.parsers.DocumentBuilder;
@@ -17,7 +19,7 @@ import jp.d77.java.yamadata.Library.TrackLib.TrackPoint;
 
 public class GpxData {
     private String m_name;
-    private List<TrackPoint> m_trackPoints;
+    private NavigableMap<Long, TrackPoint> m_trackPoints;
 
     /**
      * コンストラクタ
@@ -25,7 +27,7 @@ public class GpxData {
     public GpxData(){
     }
 
-    public GpxData( String name, List<TrackPoint> trackPoints ){
+    public GpxData( String name, NavigableMap<Long, TrackPoint> trackPoints ){
         this.m_name = name;
         this.m_trackPoints = trackPoints;
     }
@@ -56,7 +58,7 @@ public class GpxData {
 
     public GpxData setNullData(){
         this.m_name = "";
-        this.m_trackPoints = new ArrayList<>();
+        this.m_trackPoints = new TreeMap<>();
         return this;
     }
 
@@ -67,6 +69,10 @@ public class GpxData {
     public String getName(){
         if ( this.m_name == null ) return "";
         return this.m_name;
+    }
+
+    public void setName( String title ){
+        this.m_name = title;
     }
 
     /**
@@ -84,7 +90,7 @@ public class GpxData {
      */
     public Optional<TrackPoint> getStart(){
         if ( ! this.isEnable() ) return Optional.empty();
-        return Optional.ofNullable( this.m_trackPoints.get(0) );
+        return Optional.ofNullable( this.m_trackPoints.get( this.m_trackPoints.firstKey() ) );
     }
 
     /**
@@ -93,7 +99,7 @@ public class GpxData {
      */
     public Optional<TrackPoint> getEnd(){
         if ( ! this.isEnable() ) return Optional.empty();
-        return Optional.ofNullable( this.m_trackPoints.get( this.m_trackPoints.size() - 1 ) );
+        return Optional.ofNullable( this.m_trackPoints.get( this.m_trackPoints.lastKey() ) );
     } 
 
     /**
@@ -104,7 +110,7 @@ public class GpxData {
         if ( ! this.isEnable() ) return Optional.empty();
 
         TrackPoint res = null;
-        for ( TrackPoint tp: this.m_trackPoints ){
+        for ( TrackPoint tp: this.m_trackPoints.values() ){
             if ( res == null || tp.ele < res.ele ) res = tp;
         }
         return Optional.ofNullable( res );
@@ -117,7 +123,7 @@ public class GpxData {
     public Optional<TrackPoint> getHigh(){
         if ( ! this.isEnable() ) return Optional.empty();
         TrackPoint res = null;
-        for ( TrackPoint tp: this.m_trackPoints ){
+        for ( TrackPoint tp: this.m_trackPoints.values() ){
             if ( res == null || tp.ele > res.ele ) res = tp;
         }
         return Optional.ofNullable( res );
@@ -129,7 +135,7 @@ public class GpxData {
      */
     public List<TrackPoint> getTrackPoints(){
         if ( ! this.isEnable() ) return new ArrayList<>();
-        return this.m_trackPoints;
+        return new ArrayList<>( this.m_trackPoints.values() );
     }
 
     /* Loader */
@@ -156,7 +162,7 @@ public class GpxData {
         // --- trkpt取得 ---
         NodeList trkptList = doc.getElementsByTagNameNS("*", "trkpt");
 
-        List<TrackPoint> points = new ArrayList<>();
+        NavigableMap<Long, TrackPoint> points = new TreeMap<>();
 
         for (int i = 0; i < trkptList.getLength(); i++) {
             Element trkpt = (Element) trkptList.item(i);
@@ -174,11 +180,13 @@ public class GpxData {
             OffsetDateTime jst = utc.atZoneSameInstant(ZoneId.of("Asia/Tokyo"))
                                     .toOffsetDateTime();
 
-            points.add(new TrackPoint(lat, lon, ele, jst));
+            points.put( jst.toEpochSecond(), new TrackPoint(lat, lon, ele, jst) );
         }
 
         if ( this.isEnable() ){
-            this.m_trackPoints.addAll( points );
+            for ( long key: points.keySet() ){
+                this.m_trackPoints.put(key, points.get(key) );
+            }
         }else{
             this.m_name = name;
             this.m_trackPoints = points;
