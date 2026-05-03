@@ -9,19 +9,19 @@ import jp.d77.java.tools.HtmlIO.BSSForm;
 import jp.d77.java.tools.HtmlIO.HtmlString;
 import jp.d77.java.yamadata.Datas.YamaWebConfig;
 import jp.d77.java.yamadata.Library.HtmlGraph;
-import jp.d77.java.yamadata.Library.YamaHtmlLib;
-import jp.d77.java.yamadata.Library.YamaHtmlLib.GPX_ITEM;
-import jp.d77.java.yamadata.Library.YamaHtmlLib.YAMA_GRAPH_TYPE;
+import jp.d77.java.yamadata.Library.YamaLib;
+import jp.d77.java.yamadata.Library.YamaLib.GPX_ITEM;
+import jp.d77.java.yamadata.Library.YamaLib.YAMA_GRAPH_TYPE;
 import jp.d77.java.yamadata.Datas.GpxData;
-import jp.d77.java.yamadata.Datas.YamaDetailData;
+import jp.d77.java.yamadata.Datas.YamaData;
 
 public class WebYamaList extends AbstractYamaData{
-    private YamaDetailData  m_yamadata;
+    private YamaData  m_yamadata;
     private List<GpxData>   m_gpxs = null;
     public WebYamaList( YamaWebConfig cfg ) {
         super( cfg );
         this.setHtmlTitle( "YamaData" );
-        this.m_yamadata = new YamaDetailData( this.getConfig().getDataFilePath() + "yamadata.cfg", this.getConfig() );
+        this.m_yamadata = new YamaData( this.getConfig().getDataFilePath() + "yamadata.cfg", this.getConfig() );
     }
 
     // 1:init
@@ -66,7 +66,7 @@ public class WebYamaList extends AbstractYamaData{
                 }
             }
             if ( this.m_gpxs == null || this.m_gpxs.size() <= 0 ){
-                this.getConfig().addAlertError( "GPX not selected" );
+                this.getConfig().addAlertError( "登山データを選択してください" );
             }
         }
     }
@@ -105,16 +105,16 @@ public class WebYamaList extends AbstractYamaData{
         f       .divRowTop();
                 this.DisplayGraph( f );    // 新規追加ボタン
         f       .divRowBtm();
-        
+        /*
         f   .formTop( "/yamadata", false)
                 .divRowTop();
                 this.CmdRedirectButton( f );    // 新規追加ボタン
         f       .divRowBtm()
             .formBtm();
-        
+        */
         f   .formTop( "/", false)
                 .divRowTop();
-                this.CmdButton( f );    // 表示コマンドボタン
+                this.CmdButton2( f );    // 表示コマンドボタン
         f       .divRowBtm();
         f       .divRowTop();
                 this.GraphButton(f);    // グラフ表示ボタン
@@ -148,13 +148,13 @@ public class WebYamaList extends AbstractYamaData{
 
         String data = null;
         if ( this.getConfig().get( "submit_graph_gain" ).isPresent() ){
-            data = YamaHtmlLib.displayGraph( this.m_gpxs, YAMA_GRAPH_TYPE.METER );
+            data = YamaLib.displayGraph( this.m_gpxs, YAMA_GRAPH_TYPE.METER );
         }else if ( this.getConfig().get( "submit_graph_gain_start" ).isPresent() ){
-            data = YamaHtmlLib.displayGraph( this.m_gpxs, YAMA_GRAPH_TYPE.METER_ZERO_START );
+            data = YamaLib.displayGraph( this.m_gpxs, YAMA_GRAPH_TYPE.METER_ZERO_START );
         }else if ( this.getConfig().get( "submit_graph_time" ).isPresent() ){
-            data = YamaHtmlLib.displayGraph( this.m_gpxs, YAMA_GRAPH_TYPE.MINUTE );
+            data = YamaLib.displayGraph( this.m_gpxs, YAMA_GRAPH_TYPE.MINUTE );
         }else if ( this.getConfig().get( "submit_graph_time_start" ).isPresent() ){
-            data = YamaHtmlLib.displayGraph( this.m_gpxs, YAMA_GRAPH_TYPE.MINUTE_ZERO_START );
+            data = YamaLib.displayGraph( this.m_gpxs, YAMA_GRAPH_TYPE.MINUTE_ZERO_START );
         }else{
             return;
         }
@@ -215,6 +215,43 @@ public class WebYamaList extends AbstractYamaData{
         return;
     }
     
+    public void CmdButton2( BSSForm f ){
+        f.divTop(2);
+        f.addString( HtmlString.h(3, "リスト表示" ) );
+        f.divBtm(2);
+        f.divTop(10);
+        f.formSubmit(
+            BSOpts.create()
+                .label( "基本" )
+                .name( "submit_list_basic" )
+                .value( "基本" )
+        );
+        f.formSubmit(
+            BSOpts.create()
+                .label( "全部" )
+                .name( "submit_list_all" )
+                .value( "全部" )
+        );
+        f.formSubmit(
+            BSOpts.create()
+                .label( "標高・水平距離" )
+                .name( "submit_list_ele_horizon" )
+                .value( "標高・水平距離" )
+        );
+        f.formSubmit(
+            BSOpts.create()
+                .label( "高低差・勾配" )
+                .name( "submit_list_gain_slope" )
+                .value( "高低差・勾配" )
+        );
+        f.formSubmit(
+            BSOpts.create()
+                .label( "時間" )
+                .name( "submit_list_time" )
+                .value( "時間" )
+        );
+        f.divBtm(10);
+    }
 
     public void GraphButton( BSSForm f ){
         f.divTop(2);
@@ -255,8 +292,18 @@ public class WebYamaList extends AbstractYamaData{
     public void YamaList( BSSForm f ){
         Debugger.TracePrint();
         List<GPX_ITEM> disp_items = new ArrayList<>();
+        String view_mode = this.getConfig().get( "edit_listmode" ).orElse( "basic" );
+        if ( this.getConfig().get( "submit_list_all" ).isPresent() ){
+            view_mode = "all";
+        }else if ( this.getConfig().get( "submit_list_ele_horizon" ).isPresent() ){
+            view_mode = "ele_horizon";
+        }else if ( this.getConfig().get( "submit_list_gain_slope" ).isPresent() ){
+            view_mode = "gain_slope";
+        }else if ( this.getConfig().get( "submit_list_time" ).isPresent() ){
+            view_mode = "time";
+        }
 
-        switch ( this.getConfig().get( "edit_listmode" ).orElse( "basic" ) ) {
+        switch ( view_mode ) {
             case "all":
                 disp_items.add(GPX_ITEM.EDITMENU1 );    // YAMAP
                 disp_items.add(GPX_ITEM.EDITMENU2 );    // ヤマレコ
@@ -376,7 +423,7 @@ public class WebYamaList extends AbstractYamaData{
                 + "</A>" );
 
             for ( GPX_ITEM gpi: disp_items ){
-                YamaHtmlLib.displayCell( f, gpi, this.m_yamadata );
+                YamaLib.displayCell( f, gpi, this.m_yamadata );
             }
 
             f.tableRowBtm();

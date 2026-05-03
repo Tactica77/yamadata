@@ -18,7 +18,7 @@ import jp.d77.java.tools.BasicIO.Debugger;
 import jp.d77.java.tools.HtmlIO.BSSForm;
 import jp.d77.java.tools.HtmlIO.HtmlString;
 import jp.d77.java.yamadata.Datas.YamaWebConfig;
-import jp.d77.java.yamadata.Library.YamaHtmlLib;
+import jp.d77.java.yamadata.Library.YamaLib;
 
 public class WebGpxViewer extends AbstractYamaData{
     private String m_gpx_file = null;
@@ -45,7 +45,7 @@ public class WebGpxViewer extends AbstractYamaData{
         super.post_save_reload();
         if ( this.getConfig().get( "edit_select_gpx" ).isPresent() ){
             this.m_gpx_file = this.getConfig().get( "edit_select_gpx" ).get();
-            if ( ! YamaHtmlLib.isValidGpxName( this.m_gpx_file ) ) this.m_gpx_file = null;
+            if ( ! YamaLib.isValidGpxName( this.m_gpx_file ) ) this.m_gpx_file = null;
         }
     }
 

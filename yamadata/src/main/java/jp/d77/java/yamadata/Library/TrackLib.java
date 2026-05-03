@@ -3,10 +3,11 @@ package jp.d77.java.yamadata.Library;
 import java.time.Duration;
 import java.time.LocalDateTime;
 import java.time.OffsetDateTime;
-import java.util.List;
 import java.util.NavigableMap;
 import java.util.Optional;
 import java.util.TreeMap;
+
+import jp.d77.java.yamadata.Datas.GpxData;
 
 public class TrackLib {
     private static final double earth_R = 6371000.0; // 地球半径(m)
@@ -222,12 +223,12 @@ public class TrackLib {
      * @param meter
      * @return
      */
-    public static Optional<NavigableMap<Long, TrackPoint>> getRegularLengthMeter( List<TrackPoint> tps, int meter ){
+    public static Optional<NavigableMap<Long, TrackPoint>> getRegularLengthMeter( GpxData gpx, int meter ){
 
         NavigableMap<Long, TrackPoint> restp = new TreeMap<>();
         TrackPoint beforetp = null;
 
-        for ( TrackPoint tp: tps ){
+        for ( TrackPoint tp: gpx.getTrackPoints().values() ){
             if ( beforetp == null ){
                 // Start
                 beforetp = tp.clone();
@@ -257,7 +258,7 @@ public class TrackLib {
             }
         }
         // 終端を追加
-        TrackPoint w = tps.get( tps.size() - 1 ).clone();
+        TrackPoint w = gpx.getEnd().get().clone();
         if ( beforetp == null ){
             w.setDistMeter( 0d);
             w.setDistSec( 0L );
@@ -270,11 +271,11 @@ public class TrackLib {
         return Optional.ofNullable( restp );
     }
 
-    public static Optional<NavigableMap<Long, TrackPoint>> getRegularTime( List<TrackPoint> tps, long time ){
+    public static Optional<NavigableMap<Long, TrackPoint>> getRegularTime( GpxData gpx, long time ){
         NavigableMap<Long, TrackPoint> restp = new TreeMap<>();
         TrackPoint beforetp = null;
 
-        for ( TrackPoint tp: tps ){
+        for ( TrackPoint tp: gpx.getTrackPoints().values() ){
             if ( beforetp == null ){
                 // Start
                 beforetp = tp.clone();
@@ -304,7 +305,7 @@ public class TrackLib {
             }
         }
         // 終端を追加
-        TrackPoint w = tps.get( tps.size() - 1 ).clone();
+        TrackPoint w = gpx.getEnd().get().clone();
         if ( beforetp == null ){
             w.setDistMeter( 0d);
             w.setDistSec( 0L );

@@ -16,18 +16,18 @@ import jp.d77.java.tools.HtmlIO.BSSForm;
 import jp.d77.java.tools.HtmlIO.HtmlString;
 import jp.d77.java.yamadata.Datas.GpxData;
 import jp.d77.java.yamadata.Datas.YamaWebConfig;
-import jp.d77.java.yamadata.Datas.YamaDetailData;
-import jp.d77.java.yamadata.Library.YamaHtmlLib;
-import jp.d77.java.yamadata.Library.YamaHtmlLib.GPX_ITEM;
-import jp.d77.java.yamadata.Library.YamaHtmlLib.YAMA_DATA_TYPE;
+import jp.d77.java.yamadata.Datas.YamaData;
+import jp.d77.java.yamadata.Library.YamaLib;
+import jp.d77.java.yamadata.Library.YamaLib.GPX_ITEM;
+import jp.d77.java.yamadata.Library.YamaLib.YAMA_DATA_TYPE;
 
 public class WebYamaDetail extends AbstractYamaData {
-    private YamaDetailData m_yamadata;
+    private YamaData m_yamadata;
     
     public WebYamaDetail( YamaWebConfig cfg ) {
         super( cfg );
         this.setHtmlTitle( "YamaData" );
-        this.m_yamadata = new YamaDetailData( this.getConfig().getDataFilePath() + "yamadata.cfg", this.getConfig() );
+        this.m_yamadata = new YamaData( this.getConfig().getDataFilePath() + "yamadata.cfg", this.getConfig() );
     }
 
     // 1:init
@@ -66,13 +66,13 @@ public class WebYamaDetail extends AbstractYamaData {
         if ( this.getConfig().get( "edit_save" ).isPresent() ){
             // SAVE/UPLOADが押下された
             if ( this.EditSave() ) save = true;
-            if ( this.getConfig().checkUploadedTmpFile() ){
+            if ( this.getConfig().checkUploadedTmpFile() && save ){
                 // gpxファイルがアップロードされた
                 try {
                     GpxData gpx = new GpxData( this.getConfig().getUploadTempFullPath() );
                     if ( gpx.getTrackPoints().size() > 0 ){
                         String newFileName;
-                        newFileName = ToolDate.Format( gpx.getTrackPoints().get(0).getTime().orElse(null), "uuuuMMdd-hhmmss").orElse("")
+                        newFileName = ToolDate.Format( gpx.getStart().get().getTime().orElse(null), "uuuuMMdd-hhmmss").orElse("")
                             + "_"
                             + ToolDate.Format( LocalDateTime.now(), "uuuuMMdd-hhmmss").orElse("")
                             + ".gpx";
@@ -81,7 +81,8 @@ public class WebYamaDetail extends AbstractYamaData {
                             , Paths.get( this.getConfig().getDataFilePath() + "gpx/" + newFileName )
                             , StandardCopyOption.REPLACE_EXISTING);
                         this.getConfig().addAlertInfo( "saved: " + this.getConfig().getDataFilePath() + "gpx/" + newFileName );
-                        this.m_yamadata.overwriteYamaData( "gpxfiles", newFileName );
+                        this.m_yamadata.add( this.m_yamadata.getYamaName( "gpxfiles" ).orElse(""), newFileName );
+                        Debugger.DebugPrint( this.m_yamadata.join( "<->", "gpxfiles").orElse("--") );
                         this.m_yamadata.LoadGpx();
                         this.m_yamadata.createGpxDatas();
                         save = true;
@@ -355,9 +356,9 @@ public class WebYamaDetail extends AbstractYamaData {
             ,GPX_ITEM.HORIZON_DEST_ASCENT
             ,GPX_ITEM.HORIZON_DEST_DESENT
         ));
-        res += YamaHtmlLib.displayListHead( items );
-        res += YamaHtmlLib.displayListBody( items, this.m_yamadata );
-        res += YamaHtmlLib.displayListFoot();
+        res += YamaLib.displayListHead( items );
+        res += YamaLib.displayListBody( items, this.m_yamadata );
+        res += YamaLib.displayListFoot();
 
         f   .divTop(12)
             .addStringCr( res )
@@ -376,9 +377,9 @@ public class WebYamaDetail extends AbstractYamaData {
             ,GPX_ITEM.SLOPE_ASCENT
             ,GPX_ITEM.SLOPE_DESENT
         ));
-        res += YamaHtmlLib.displayListHead( items );
-        res += YamaHtmlLib.displayListBody( items, this.m_yamadata );
-        res += YamaHtmlLib.displayListFoot();
+        res += YamaLib.displayListHead( items );
+        res += YamaLib.displayListBody( items, this.m_yamadata );
+        res += YamaLib.displayListFoot();
         f   .divTop(12)
             .addStringCr( res )
             .divBtm(12);
@@ -397,9 +398,9 @@ public class WebYamaDetail extends AbstractYamaData {
             ,GPX_ITEM.DATETIME_LOW
             ,GPX_ITEM.DATETIME_END
         ));
-        res += YamaHtmlLib.displayListHead( items );
-        res += YamaHtmlLib.displayListBody( items, this.m_yamadata );
-        res += YamaHtmlLib.displayListFoot();
+        res += YamaLib.displayListHead( items );
+        res += YamaLib.displayListBody( items, this.m_yamadata );
+        res += YamaLib.displayListFoot();
         f   .divTop(12)
             .addStringCr( res )
             .divBtm(12);
@@ -407,7 +408,7 @@ public class WebYamaDetail extends AbstractYamaData {
 
     private String gpxViewerLink( String f ){
         if ( f == null ) return "-";
-        if ( ! YamaHtmlLib.isValidGpxName( f ) ) return HtmlString.HtmlEscape(f);
+        if ( ! YamaLib.isValidGpxName( f ) ) return HtmlString.HtmlEscape(f);
         return "<A Href=\"/gpxviewer?edit_select_gpx=" + f + "\" target=\"_blank\">" + f + "</A>";
     }
 

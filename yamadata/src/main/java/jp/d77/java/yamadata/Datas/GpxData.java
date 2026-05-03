@@ -2,8 +2,6 @@ package jp.d77.java.yamadata.Datas;
 
 import java.time.OffsetDateTime;
 import java.time.ZoneId;
-import java.util.ArrayList;
-import java.util.List;
 import java.util.NavigableMap;
 import java.util.Optional;
 import java.util.TreeMap;
@@ -111,7 +109,8 @@ public class GpxData {
 
         TrackPoint res = null;
         for ( TrackPoint tp: this.m_trackPoints.values() ){
-            if ( res == null || tp.ele < res.ele ) res = tp;
+            if ( res == null ) res = tp;
+            else if ( ! tp.isEmpty() && tp.ele < res.ele ) res = tp;
         }
         return Optional.ofNullable( res );
     }
@@ -124,7 +123,8 @@ public class GpxData {
         if ( ! this.isEnable() ) return Optional.empty();
         TrackPoint res = null;
         for ( TrackPoint tp: this.m_trackPoints.values() ){
-            if ( res == null || tp.ele > res.ele ) res = tp;
+            if ( res == null ) res = tp;
+            else if ( ! tp.isEmpty() && tp.ele > res.ele ) res = tp;
         }
         return Optional.ofNullable( res );
     }
@@ -133,14 +133,14 @@ public class GpxData {
      * 全トラックデータ
      * @return
      */
-    public List<TrackPoint> getTrackPoints(){
-        if ( ! this.isEnable() ) return new ArrayList<>();
-        return new ArrayList<>( this.m_trackPoints.values() );
+    public NavigableMap<Long, TrackPoint> getTrackPoints(){
+        if ( ! this.isEnable() ) return new TreeMap<>();
+        return this.m_trackPoints;
     }
 
     /* Loader */
 
-    private static String getChildText(Element parent, String tagName) {
+    private String getChildText(Element parent, String tagName) {
         NodeList list = parent.getElementsByTagNameNS("*", tagName);
         return list.item(0).getTextContent();
     }
@@ -170,7 +170,7 @@ public class GpxData {
             double lat = Double.parseDouble(trkpt.getAttribute("lat"));
             double lon = Double.parseDouble(trkpt.getAttribute("lon"));
             double ele = Double.parseDouble(
-                    getChildText(trkpt, "ele")
+                    this.getChildText(trkpt, "ele")
             );
 
             // UTC → JST変換
@@ -184,6 +184,11 @@ public class GpxData {
         }
 
         if ( this.isEnable() ){
+            // データ追加
+            // データ追加時はEmptyデータを挟む
+            //long key = this.m_trackPoints.lastEntry().getKey();
+            this.m_trackPoints.put( this.m_trackPoints.lastEntry().getKey()+1, new TrackPoint() );
+
             for ( long key: points.keySet() ){
                 this.m_trackPoints.put(key, points.get(key) );
             }
