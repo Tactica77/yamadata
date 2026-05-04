@@ -192,9 +192,11 @@ public class GpxData {
             for ( long key: points.keySet() ){
                 this.m_trackPoints.put(key, points.get(key) );
             }
+            Debugger.InfoPrint( "load add=" + filePath );
         }else{
             this.m_name = name;
             this.m_trackPoints = points;
+            Debugger.InfoPrint( "loaded=" + filePath );
         }
     }
 }

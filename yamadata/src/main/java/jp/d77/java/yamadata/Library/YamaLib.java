@@ -69,7 +69,7 @@ public class YamaLib {
         Debugger.TracePrint();
         List<GpxData> graph_gpxs = new ArrayList<>();
         double unit_meter = 50d;
-        long unit_minute = 50l;
+        long unit_minute = 5 * 60l;
 
         // データ形式を変換
         for( GpxData gpx: gpxs ){
@@ -116,7 +116,28 @@ public class YamaLib {
 
         int gcnt = 0;
         TrackPoint tp;
-        HtmlGraph graph = new HtmlGraph();
+        HtmlGraph graph = new HtmlGraph( "null" );
+        if ( type == YAMA_GRAPH_TYPE.METER) {
+            graph.setGraphTitle( "高低差/単純比較" );
+            graph.setLabelX( "山行距離" );
+            graph.setLabelY( "標高" );
+
+        }else if ( type == YAMA_GRAPH_TYPE.METER_ZERO_START ){
+            graph.setGraphTitle( "高低差/起点累積" );
+            graph.setLabelX( "山行距離" );
+            graph.setLabelY( "累積高低差" );
+
+        }else if ( type == YAMA_GRAPH_TYPE.MINUTE ){
+            graph.setGraphTitle( "山行時間/単純比較" );
+            graph.setLabelX( "山行時間" );
+            graph.setLabelY( "標高" );
+
+        }else if ( type == YAMA_GRAPH_TYPE.MINUTE_ZERO_START ){
+            graph.setGraphTitle( "山行時間/起点累積" );
+            graph.setLabelX( "山行時間" );
+            graph.setLabelY( "累積高低差" );
+
+        }
 
         for ( GpxData gpx: graph_gpxs ){
             graph.getDbf().setProp( gpx.getName(), "stack_" + gcnt, GRAPH_TYPE.LINE );
@@ -160,7 +181,7 @@ public class YamaLib {
                         }
                     }
 
-                    graph.getDbf().set( "\"" + str_axis + "\"" , gpx.getName(),  ele );
+                    graph.getDbf().set( gpx.getName(), "\"" + str_axis + "\"", ele );
                 }else if ( type == YAMA_GRAPH_TYPE.MINUTE || type == YAMA_GRAPH_TYPE.MINUTE_ZERO_START ){
                     // 横軸が時間単位の表示
                     //Double dm = -9999d; // TrackPointから取得したデータ。表示させない場合は -9999
@@ -183,7 +204,7 @@ public class YamaLib {
                             ele = (float)( tp.ele - gpx.getStart().orElse( tp ).ele );
                         }
                     }
-                    graph.getDbf().set( "\"" + str_axis + "\"" , gpx.getName(),  ele );
+                    graph.getDbf().set( gpx.getName(), "\"" + str_axis + "\"" ,   ele );
                 }
             }
         }

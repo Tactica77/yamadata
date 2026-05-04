@@ -3,38 +3,72 @@ package jp.d77.java.yamadata.Library;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
+import java.util.Map;
 import java.util.Optional;
 
 import jp.d77.java.tools.BasicIO.Debugger;
 import jp.d77.java.tools.HtmlIO.HtmlString;
 
 public class HtmlGraph {
+    /**
+     * グラフ種滅
+     */
+    public enum GRAPH_TYPE {
+        NULL    ("null"),
+        BAR    ("bar"),
+        LINE    ("line"),
+        LINE_YDIFF    ("line");
+        private final String label;
+        GRAPH_TYPE(String label) { this.label = label; }
+        public String toString() { return "type:'" + label + "'"; }
+    }
+
+    /**
+     * プロパティ用クラス
+     */
     public class dbf_prop {
         public GRAPH_TYPE   m_type = GRAPH_TYPE.NULL;
         public String   m_stack = "stack_1";
     }
 
+    /**
+     * データ格納用クラス
+     */
     public class dbf {
-        protected String m_dbid;
+//        protected String m_dbid;
         protected String m_title;
-        protected LinkedHashMap<String, HashMap<String,Float>> m_datas;   // YMD, key, value
-        protected LinkedHashMap<String, dbf_prop> m_prop;
+        protected Map<String, HashMap<String,Float>> m_datas;   // y_axis, key, x_value
+        protected Map<String, dbf_prop> m_prop;
 
-        public dbf( String dbid, String title ){
-            this.m_dbid = dbid;
+        public dbf( String title ){
             this.m_title = title;
-            this.m_datas = new LinkedHashMap<String, HashMap<String,Float>>();
             this.m_prop = new LinkedHashMap<String, dbf_prop>();
+            this.m_datas = new LinkedHashMap<String, HashMap<String,Float>>();
         }
-        public String getDbId(){ return this.m_dbid; }
-        public String[] getYMDList(){ return this.m_datas.keySet().toArray( new String[0] ); }
+        /**
+         * Y軸のラベル(y_axis)を取得
+         * @return
+         */
+        public String[] getAxisList(){ return this.m_datas.keySet().toArray( new String[0] ); }
+        /**
+         * グラフ名(key)を取得
+         * @return
+         */
         public String[] getKeyList(){ return this.m_prop.keySet().toArray( new String[0] ); }
-
-        public void set( String YMD, String key, Float value ){
-            if ( ! this.m_prop.containsKey( key ) ) return;
-            if ( ! this.m_datas.containsKey( YMD ) ) this.m_datas.put( YMD, new HashMap<String,Float>() );
-            this.m_datas.get( YMD ).put(key, value);
+        /**
+         * プロパティ情報を取得
+         * @param key
+         * @return
+         */
+        public Optional<dbf_prop> getProp( String key ){
+            if ( ! this.m_prop.containsKey( key ) ) return Optional.empty();
+            return Optional.ofNullable( this.m_prop.get(key) );
         }
+        /**
+         * 値(x_value)をすべて取得
+         * @param key
+         * @return
+         */
         public String[] getValues( String key ){
             ArrayList<String> val = new ArrayList<String>();
             for ( String YMD: this.m_datas.keySet() ){
@@ -46,66 +80,115 @@ public class HtmlGraph {
             }
             return val.toArray( new String[0] );
         }
+
+        /**
+         * プロパティ値の設定
+         * @param key グラフの名前
+         * @param stack スタックグループ
+         * @param type  グラフの種類
+         */
         public void setProp( String key, String stack, GRAPH_TYPE type ){
             if ( ! this.m_prop.containsKey( key ) ) this.m_prop.put( key, new dbf_prop() );
             this.m_prop.get( key ).m_stack = stack;
             this.m_prop.get( key ).m_type = type;
         }
-        public Optional<dbf_prop> getProp( String key ){
-            if ( ! this.m_prop.containsKey( key ) ) return Optional.empty();
-            return Optional.ofNullable( this.m_prop.get(key) );
+
+        /**
+         * グラフデータ格納
+         * @param key       グラフの名前
+         * @param y_axis    横軸ラベル
+         * @param x_value   グラフの値
+         */
+        public void set( String key, String y_axis, Float x_value ){
+            if ( ! this.m_prop.containsKey( key ) ) return;
+            if ( ! this.m_datas.containsKey( y_axis ) ) this.m_datas.put( y_axis, new HashMap<String,Float>() );
+            this.m_datas.get( y_axis ).put(key, x_value);
         }
     }
 
-    public enum GRAPH_TYPE {
-        NULL    ("null"),
-        BAR    ("bar"),
-        LINE    ("line"),
-        LINE_YDIFF    ("line");
-        private final String label;
-        GRAPH_TYPE(String label) { this.label = label; }
-        public String toString() { return "type:'" + label + "'"; }
-    }
-
-    //private TYPE2   m_type;
-    private Integer m_width;
-    private Integer m_height;
-    private String  m_GraphTitle;
-    private dbf m_dbf = null;
+    private String m_LabelY;       // 横軸ラベル
+    private String m_LabelX;       // 縦軸ラベル
+    private Integer m_width;        // グラフの幅
+    private Integer m_height;       // グラフの高さ
+    private String  m_GraphTitle;   // グラフタイトル
+    private dbf m_dbf = null;       // グラフデータ
+    private static boolean m_ready = false;
 
     // コンストラクタ
-    public HtmlGraph() {
-        this.m_dbf = new dbf( "defid", "defName" );
+    public HtmlGraph( String graphTitle) {
+        this.m_dbf = new dbf( graphTitle );
     }
 
     public static String getHeaderScript(){
+        HtmlGraph.m_ready = true;
         return "<SCRIPT src=\"https://cdn.jsdelivr.net/npm/chart.js\"></SCRIPT>"; 
     }
 
+    /**
+     * タイトルを再設定
+     * @param GraphTitle
+     * @return
+     */
     public HtmlGraph setGraphTitle( String GraphTitle ) {
         this.m_GraphTitle = GraphTitle;
         return this;
     }
 
+    /**
+     * クラフの幅を固定化
+     * @param width
+     * @return
+     */
     public HtmlGraph setWidth( int width ) {
         this.m_width = width;
         return this;
     }
 
+    /**
+     * グラフの高さを固定化
+     * @param height
+     * @return
+     */
     public HtmlGraph setHeight( int height ) {
         this.m_height = height;
         return this;
     }
 
+    /**
+     * X(縦)軸ラベル(単位)
+     * @param label
+     * @return
+     */
+    public HtmlGraph setLabelX( String label ) {
+        this.m_LabelX = label;
+        return this;
+    }
+
+    /**
+     * Y(横)軸ラベル(単位)
+     * @param label
+     * @return
+     */
+    public HtmlGraph setLabelY( String label ) {
+        this.m_LabelY = label;
+        return this;
+    }
+
     public dbf getDbf(){ return this.m_dbf; }
-    public String draw_graph( String graph_no ) {
-        Debugger.InfoPrint( "count = " + this.m_dbf.getYMDList().length );
-        String graph_id = this.m_dbf.getDbId() + "_" + graph_no;
+    public String draw_graph( String graph_uniq_no ) {
+        Debugger.TracePrint();
+        if ( HtmlGraph.m_ready == false ) return "ERROR: exec getHeaderScript";
+        String graph_id = "graph_" + graph_uniq_no;
+        Debugger.InfoPrint( "Graph: " + graph_id + " count = " + this.m_dbf.getAxisList().length );
         HtmlString  html = HtmlString.init();
         String opt = "";
+        String label_x = "";
+        String label_y = "";
 
         if ( this.m_width != null) opt += " width=\"" + this.m_width + "\"";
         if ( this.m_height != null) opt += " height=\"" + this.m_height + "\"";
+        if ( this.m_LabelX != null) label_x = "title: { display: true, text: '" + this.m_LabelX + "' },";
+        if ( this.m_LabelY != null) label_y = "title: { display: true, text: '" + this.m_LabelY + "'},";
 
         // CANVAS
         html.addStringCr( "<DIV>" );
@@ -128,7 +211,7 @@ public class HtmlGraph {
         html.addStringCr( 3,"data: {" );
 
         // X-Label
-        String[] HeaderList = this.m_dbf.getYMDList();
+        String[] HeaderList = this.m_dbf.getAxisList();
         html.addStringCr( 4,"labels: [" + String.join( ",", HeaderList ) + "]," );
         //Debugger.LogPrint( "Label=" + this.joinData( this.getYMList() ) );
         
@@ -177,9 +260,11 @@ public class HtmlGraph {
         html.addStringCr( 4,"scales: {" );
         html.addStringCr( 5,"x: {" );
         html.addStringCr( 6,"autoSkip: false," );
+        if ( ! label_x.isEmpty() ) html.addStringCr( 6,label_x );
         html.addStringCr( 5,"}," );
         html.addStringCr( 5,"y: {" );
         html.addStringCr( 6,"beginAtZero: true," );
+        if ( ! label_y.isEmpty() ) html.addStringCr( 6,label_y );
         html.addStringCr( 5,"}," );
         html.addStringCr( 4,"}," );
         html.addStringCr( 3,"}" );

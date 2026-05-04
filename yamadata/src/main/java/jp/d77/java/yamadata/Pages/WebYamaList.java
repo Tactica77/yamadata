@@ -57,9 +57,9 @@ public class WebYamaList extends AbstractYamaData{
                     if ( gpx != null ) {
                         gpx.setName( this.m_yamadata.getYamaData( "title" ).orElse( "N/A" ) );
                         this.m_gpxs.add( gpx );
-                        this.getConfig().addAlertInfo( "select ID=" + id + " gpx added");
+                        this.getConfig().addAlertInfo( "select ID=" + id + " gpx added: " + this.m_yamadata.getYamaData( "title" ).get() );
                     }else{
-                        this.getConfig().addAlertInfo( "select ID=" + id + " gpx not add");
+                        this.getConfig().addAlertInfo( "select ID=" + id + " gpx not add: " + this.m_yamadata.getYamaData( "title" ).get() );
                     }
                 } catch ( NumberFormatException e ) {
                     this.getConfig().addAlertError( "select ID=" + id );

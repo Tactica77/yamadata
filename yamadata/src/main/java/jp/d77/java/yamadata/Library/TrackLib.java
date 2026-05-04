@@ -302,6 +302,7 @@ public class TrackLib {
                 w.setDistSec( beforetp.distSec.orElse( 0L ) + TrackLib.distanceSec( beforetp, w ) );
                 restp.put( w.getEpochSec(), w );
                 beforetp = w;
+                //Debugger.DebugPrint( ToolDate.Format( w.getTime().get(), "hh:mm:ss" ).orElse("-") );
             }
         }
         // 終端を追加
