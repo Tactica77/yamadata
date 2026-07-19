@@ -59,7 +59,6 @@ public class YamaDataMain {
     }    
 
     @RequestMapping("/yamadata")  // ルートへこのメソッドをマップする
-    @SuppressWarnings("null")
     public String yamadetail( HttpServletRequest request ) {
         Debugger.init();
         Debugger.InfoPrint( "------ START ------" );
@@ -94,10 +93,9 @@ public class YamaDataMain {
         return this.procWeb( web );
     }
 
-    @SuppressWarnings("null")
     private void setForm( HttpServletRequest request, WebConfig cfg ){
         Debugger.TracePrint();
-        Debugger.setDebug(true);
+        Debugger.setDebug(false);
         
         // Modeを取得
         cfg.overwrite("mode", WebUtils.findParameterValue(request, "mode") );

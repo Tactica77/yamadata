@@ -149,10 +149,13 @@ public class WebYamaList extends AbstractYamaData{
         String data = null;
         if ( this.getConfig().get( "submit_graph_gain" ).isPresent() ){
             data = YamaLib.displayGraph( this.m_gpxs, YAMA_GRAPH_TYPE.METER );
+
         }else if ( this.getConfig().get( "submit_graph_gain_start" ).isPresent() ){
             data = YamaLib.displayGraph( this.m_gpxs, YAMA_GRAPH_TYPE.METER_ZERO_START );
+
         }else if ( this.getConfig().get( "submit_graph_time" ).isPresent() ){
             data = YamaLib.displayGraph( this.m_gpxs, YAMA_GRAPH_TYPE.MINUTE );
+            
         }else if ( this.getConfig().get( "submit_graph_time_start" ).isPresent() ){
             data = YamaLib.displayGraph( this.m_gpxs, YAMA_GRAPH_TYPE.MINUTE_ZERO_START );
         }else{

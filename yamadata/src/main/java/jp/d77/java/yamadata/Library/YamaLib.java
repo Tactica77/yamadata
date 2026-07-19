@@ -89,13 +89,13 @@ public class YamaLib {
                 }else if ( type == YAMA_GRAPH_TYPE.MINUTE ){
                     graph_gpxs.add(
                         new GpxData( gpx.getName()
-                        , TrackLib.getRegularTime( gpx, unit_minute ).orElse( new TreeMap<>() ) )
+                        , TrackLib.getRegularLengthSec( gpx, unit_minute ).orElse( new TreeMap<>() ) )
                     );
 
                 }else if ( type == YAMA_GRAPH_TYPE.MINUTE_ZERO_START ){
                     graph_gpxs.add(
                         new GpxData( gpx.getName()
-                        , TrackLib.getRegularTime( gpx, unit_minute ).orElse( new TreeMap<>() ) )
+                        , TrackLib.getRegularLengthSec( gpx, unit_minute ).orElse( new TreeMap<>() ) )
                     );
                 }
             } catch (Exception e) {
