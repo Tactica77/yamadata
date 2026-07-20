@@ -121,7 +121,15 @@ public class HtmlGraph {
 
     public static String getHeaderScript(){
         HtmlGraph.m_ready = true;
-        return "<SCRIPT src=\"https://cdn.jsdelivr.net/npm/chart.js\"></SCRIPT>"; 
+        return "<SCRIPT src=\"https://cdn.jsdelivr.net/npm/chart.js\"></SCRIPT>\n"
+        + "<STYLE>\n"
+        + ".chart-container {\n"
+        + "    width: 100%;\n"
+        + "    aspect-ratio: 1 / 0.6;\n"
+        + "    max-width: 1200px;\n"
+        + "    margin: 0 auto;\n"
+        + "}\n"
+        + "</STYLE>\n"; 
     }
 
     /**
@@ -182,34 +190,30 @@ public class HtmlGraph {
         Debugger.InfoPrint( "Graph: " + graph_id + " count = " + this.m_dbf.getAxisList().length );
         HtmlString  html = HtmlString.init();
         String opt = "";
-        String style = "";
         String label_x = "";
         String label_y = "";
 
         if ( this.m_width != null) {
-            style += "width:" + this.m_width + "px;";
-            //opt += " width=\"" + this.m_width + "\"";
+            //style += "width:" + this.m_width + "px;";
+            opt += " width=\"" + this.m_width + "\"";
         }else{
-            style += "width:100pct;";
+            //style += "width:100pct;";
             //opt += " width=\"100%\"";
         }
 
         if ( this.m_height != null) {
-            style += "height:" + this.m_height + "px;";
-            //opt += " height=\"" + this.m_height + "\"";
+            //style += "height:" + this.m_height + "px;";
+            opt += " height=\"" + this.m_height + "\"";
         }else{
-            style += "height:600px;";
+            //style += "height:600px;";
             //opt += " height=\"50\"";
         }
+
         if ( this.m_LabelX != null) label_x = "title: { display: true, text: '" + this.m_LabelX + "' },";
         if ( this.m_LabelY != null) label_y = "title: { display: true, text: '" + this.m_LabelY + "'},";
 
         // CANVAS
-        if ( style.equals( "" ) ){
-            html.addStringCr( "<DIV>" );
-        }else{
-            html.addStringCr( "<DIV style=\"" + style + "\">" );
-        }
+        html.addStringCr( "<DIV class=\"chart-container\">" );
         html.addStringCr( "<CANVAS id=\"" + graph_id + "\""+ opt + "></CANVAS>" );
         html.addStringCr( "</DIV>" );
 
